@@ -4,6 +4,16 @@ Transparently proxy sqlite tables as a dictionary of arrays
 
 [![npm Package Version](https://img.shields.io/npm/v/better-sqlite3-proxy.svg?maxAge=2592000)](https://www.npmjs.com/package/better-sqlite3-proxy)
 
+## Features
+- auto run sqlite statements, supports
+  - [x] auto create table
+  - [x] insert
+  - [x] update
+  - [x] select
+  - [ ] delete
+  - [ ] foreign key reference
+  - [ ] auto expand reference objects like [ref-db](https://github.com/beenotung/ref-db)
+
 ## Usage Example
 
 ```typescript
