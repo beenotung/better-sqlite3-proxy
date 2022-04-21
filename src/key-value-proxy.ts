@@ -1,6 +1,6 @@
 import { DBInstance, migrateUp } from 'better-sqlite3-schema'
 
-export function proxyDB<Dict extends { [table: string]: object[] }>(
+export function proxyKeyValueDB<Dict extends { [table: string]: object[] }>(
   db: DBInstance,
 ): Dict {
   type TableName = keyof Dict
