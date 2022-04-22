@@ -1,6 +1,7 @@
-import { DBInstance, migrateUp } from 'better-sqlite3-schema'
+import { DBInstance } from 'better-sqlite3-schema'
+import { unProxySymbol } from './un-proxy'
 
-export function proxyKeyValueDB<Dict extends { [table: string]: object[] }>(
+export function proxyKeyValue<Dict extends { [table: string]: object[] }>(
   db: DBInstance,
 ): Dict {
   type TableName = keyof Dict
@@ -48,6 +49,9 @@ create table if not exists ${table} (
     )
     let proxy = new Proxy([] as unknown[] as Table, {
       has(target, p) {
+        if (p === unProxySymbol) {
+          return true
+        }
         if (typeof p !== 'symbol') {
           let id = +p
           if (Number.isInteger(id)) {
@@ -76,6 +80,9 @@ create table if not exists ${table} (
         return Reflect.set(target, p, value, receiver)
       },
       get(target, p, receiver) {
+        if (p === unProxySymbol) {
+          return select_all.all().map(decode)
+        }
         if (p === 'length') {
           return count.get()
         }

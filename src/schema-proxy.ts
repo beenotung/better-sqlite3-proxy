@@ -1,14 +1,6 @@
 import { Statement } from 'better-sqlite3'
 import { DBInstance } from 'better-sqlite3-schema'
-
-export let unProxySymbol = Symbol('unProxy')
-
-export function unProxy<T extends object>(row: T): T {
-  if (unProxySymbol in row) {
-    return (row as any)[unProxySymbol]
-  }
-  return row
-}
+import { unProxySymbol } from './un-proxy'
 
 export function proxySchema<Dict extends { [table: string]: object[] }>(
   db: DBInstance,
