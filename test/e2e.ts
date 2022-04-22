@@ -1,5 +1,5 @@
 import { expect } from 'chai'
-import { unProxy } from '../src/db-proxy'
+import { unProxy } from '../src/schema-proxy'
 
 export type DBProxy = {
   user: {

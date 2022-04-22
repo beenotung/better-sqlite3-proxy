@@ -1,7 +1,7 @@
 import DB from 'better-sqlite3-helper'
 import { DBInstance, newDB } from 'better-sqlite3-schema'
 import { join } from 'path'
-import { proxyDB } from '../src/db-proxy'
+import { proxySchema } from '../src/schema-proxy'
 import { DBProxy, e2eTest } from './e2e'
 
 context('proxyDB TestSuit', () => {
@@ -33,7 +33,7 @@ drop table post;
       ],
     },
   })
-  let proxy = proxyDB<DBProxy>(db, {
+  let proxy = proxySchema<DBProxy>(db, {
     user: ['id', 'username'],
     post: ['id', 'user_id', 'content', 'created_at'],
   })

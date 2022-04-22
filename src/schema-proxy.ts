@@ -10,7 +10,7 @@ export function unProxy<T extends object>(row: T): T {
   return row
 }
 
-export function proxyDB<Dict extends { [table: string]: object[] }>(
+export function proxySchema<Dict extends { [table: string]: object[] }>(
   db: DBInstance,
   tableFields: Record<keyof Dict, string[]>,
 ): Dict {
