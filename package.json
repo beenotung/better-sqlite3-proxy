@@ -1,13 +1,13 @@
 {
   "name": "better-sqlite3-proxy",
   "version": "0.0.0",
-  "description": "",
+  "description": "Efficiently proxy sqlite tables and access data as typical array of objects.",
   "keywords": [],
-  "author": "",
-  "license": "ISC",
+  "author": "Beeno Tung <aabbcc1241@yahoo.com.hk> (https://beeno-tung.surge.sh)",
+  "license": "BSD-2-Clause",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "tsc -p . --noEmit"
   },
   "dependencies": {
     "better-sqlite3": "^7.5.0",
@@ -25,5 +25,16 @@
     "prettier": "^2.5.1",
     "ts-mocha": "^9.0.2",
     "typescript": "^4.6.3"
-  }
+  },
+  "directories": {
+    "test": "test"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/beenotung/better-sqlite3-proxy.git"
+  },
+  "bugs": {
+    "url": "https://github.com/beenotung/better-sqlite3-proxy/issues"
+  },
+  "homepage": "https://github.com/beenotung/better-sqlite3-proxy#readme"
 }
