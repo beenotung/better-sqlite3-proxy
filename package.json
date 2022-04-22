@@ -2,7 +2,15 @@
   "name": "better-sqlite3-proxy",
   "version": "0.0.0",
   "description": "Efficiently proxy sqlite tables and access data as typical array of objects.",
-  "keywords": [],
+  "keywords": [
+    "sqlite",
+    "proxy",
+    "array",
+    "sync operation",
+    "database",
+    "data access object",
+    "better-sqlite3"
+  ],
   "author": "Beeno Tung <aabbcc1241@yahoo.com.hk> (https://beeno-tung.surge.sh)",
   "license": "BSD-2-Clause",
   "main": "dist/index.js",
