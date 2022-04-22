@@ -1,8 +1,9 @@
 import { Statement } from 'better-sqlite3'
-import { DBInstance, migrateUp } from 'better-sqlite3-schema'
+import { DBInstance } from 'better-sqlite3-schema'
 
 export function proxyDB<Dict extends { [table: string]: object[] }>(
   db: DBInstance,
+  tableFields: Record<keyof Dict, string[]>,
 ): Dict {
   type TableName = keyof Dict
   type Row<Name extends TableName> = Dict[Name][number]
@@ -69,6 +70,8 @@ export function proxyDB<Dict extends { [table: string]: object[] }>(
       .prepare(/* sql */ `select count(*) from ${table} where id = ?`)
       .pluck()
 
+    let select_id = db.prepare(/* sql */ `select id from ${table}`).pluck()
+
     let proxy = new Proxy([] as unknown[] as Table, {
       has(target, p) {
         console.log('has:', p)
@@ -120,13 +123,8 @@ export function proxyDB<Dict extends { [table: string]: object[] }>(
         }
         if (p === Symbol.iterator) {
           return function* () {
-            for (let offset = 0; ; offset++) {
-              let row = select_by_offset.get(offset)
-              if (row) {
-                yield decode(row.value)
-              } else {
-                break
-              }
+            for (let id of select_id.all()) {
+              yield proxyRow(table, rowProxyMap, id)
             }
           }
         }
@@ -158,12 +156,10 @@ export function proxyDB<Dict extends { [table: string]: object[] }>(
     rowProxyMap.set(id, proxy)
     return proxy
   }
-  return new Proxy({} as Dict, {
-    get(target, propertyKey, receiver) {
-      if (typeof propertyKey === 'string') {
-        return proxyTable(propertyKey)
-      }
-      return Reflect.get(target, propertyKey, receiver)
-    },
-  })
+  let table_dict = {} as Dict
+  for (let table in tableFields) {
+    let fields = tableFields[table]
+    table_dict[table] = proxyTable(table, fields)
+  }
+  return table_dict
 }

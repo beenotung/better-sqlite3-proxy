@@ -1,6 +1,6 @@
 import DB from 'better-sqlite3-helper'
 import { join } from 'path'
-import { proxyDB } from '../src/db-proxy'
+import { proxyDB } from '../src/proxy'
 
 export let db = DB({
   path: join('data', 'sqlite3.db'),
@@ -41,10 +41,7 @@ let proxy = proxyDB<{
     content: string
     created_at?: string
   }[]
-}>(db, {
-  user: ['id', 'username'],
-  post: ['id', 'user_id', 'content', 'created_at'],
-})
+}>(db)
 
 proxy.user[1] = { id: 1, username: 'Alice' }
 console.log('user[1]:', proxy.user[1].username)
