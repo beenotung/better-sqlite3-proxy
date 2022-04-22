@@ -6,14 +6,13 @@ Transparently proxy sqlite tables as a dictionary of arrays
 
 ## Features
 
-- auto run sqlite statements, supports
-  - [x] auto create table
+- auto run sqlite statements, supports:
+  - [x] create table (only for key-value proxy)
+  - [x] select
   - [x] insert
   - [x] update
-  - [x] select
-  - [ ] delete
-  - [ ] foreign key reference
-  - [ ] auto expand reference objects like [ref-db](https://github.com/beenotung/ref-db)
+  - [x] delete
+- [ ] auto expand foreign key reference into nested objects like [ref-db](https://github.com/beenotung/ref-db)
 
 ## Usage Example
 
