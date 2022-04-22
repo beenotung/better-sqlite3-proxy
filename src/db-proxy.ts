@@ -1,6 +1,15 @@
 import { Statement } from 'better-sqlite3'
 import { DBInstance } from 'better-sqlite3-schema'
 
+export let unProxySymbol = Symbol('unProxy')
+
+export function unProxy<T extends object>(row: T): T {
+  if (unProxySymbol in row) {
+    return (row as any)[unProxySymbol]
+  }
+  return row
+}
+
 export function proxyDB<Dict extends { [table: string]: object[] }>(
   db: DBInstance,
   tableFields: Record<keyof Dict, string[]>,
@@ -19,16 +28,20 @@ export function proxyDB<Dict extends { [table: string]: object[] }>(
     }
     let rowProxyMap = new Map<number, Row<Name>>()
 
-    let select_column_dict: Record<string, Statement> = {}
+    let select_one_column_dict: Record<string, Statement> = {}
     for (let field of fields) {
-      select_column_dict[field] = db
+      select_one_column_dict[field] = db
         .prepare(/* sql */ `select ${field} from ${table} where id = ?`)
         .pluck()
     }
+    let select_all_column_by_id = db.prepare(
+      /* sql */ `select * from ${table} where id = ? limit 1`,
+    )
+    let select_all = db.prepare(/* sql */ `select * from ${table}`)
 
     let count = db.prepare(/* sql */ `select count(*) from ${table}`).pluck()
     let delete_by_length = db.prepare(
-      /* sql */ `delete from ${table} where id >= ?`,
+      /* sql */ `delete from ${table} where id > ?`,
     )
 
     let update_dict: Record<string, Statement> = {}
@@ -39,9 +52,18 @@ export function proxyDB<Dict extends { [table: string]: object[] }>(
       let update =
         update_dict[key] ||
         (update_dict[key] = db.prepare(
-          /* sql */ `update ${table} set ${keys} where id = :id`,
+          /* sql */ `update ${table} set ${keys.map(
+            key => `${key} = :${key}`,
+          )} where id = :id`,
         ))
       update.run(row)
+    }
+
+    let update_one_column_dict: Record<string, Statement> = {}
+    for (let field of fields) {
+      update_one_column_dict[field] = db.prepare(
+        /* sql */ `update ${table} set ${field} = :${field} where id = :id`,
+      )
     }
 
     let insert_empty = db.prepare(
@@ -51,7 +73,7 @@ export function proxyDB<Dict extends { [table: string]: object[] }>(
     let insert_dict: Record<string, Statement> = {}
     let insert_run = (row: Record<string, any>) => {
       let keys = Object.keys(row)
-      if (keys.length) {
+      if (keys.length === 0) {
         insert_empty.run()
         return
       }
@@ -67,14 +89,57 @@ export function proxyDB<Dict extends { [table: string]: object[] }>(
     }
 
     let count_by_id = db
-      .prepare(/* sql */ `select count(*) from ${table} where id = ?`)
+      .prepare(/* sql */ `select count(*) from ${table} where id = ? limit 1`)
       .pluck()
 
     let select_id = db.prepare(/* sql */ `select id from ${table}`).pluck()
 
+    function push() {
+      for (let i = 0; i < arguments.length; i++) {
+        insert_run(arguments[i])
+      }
+      return count.get()
+    }
+
+    function proxyRow<Name extends TableName>(id: number): Row<Name> {
+      let proxy = rowProxyMap.get(id)
+      if (proxy) {
+        return rowProxyMap.get(id)!
+      }
+      proxy = new Proxy({} as Row<Name>, {
+        has(target, p) {
+          return (
+            p === unProxySymbol ||
+            (typeof p === 'string' && fields.includes(p)) ||
+            Reflect.has(target, p)
+          )
+        },
+        set(target, p, value, receiver) {
+          if (typeof p === 'string' && fields.includes(p)) {
+            update_one_column_dict[p].run({ id, [p]: value })
+            return true
+          }
+          return Reflect.set(target, p, value, receiver)
+        },
+        get(target, p, receiver) {
+          if (p === unProxySymbol) {
+            return select_all_column_by_id.get(id)
+          }
+          if (typeof p === 'string' && fields.includes(p)) {
+            return select_one_column_dict[p].get(id)
+          }
+          return Reflect.get(target, p, receiver)
+        },
+      })
+      rowProxyMap.set(id, proxy)
+      return proxy
+    }
+
     let proxy = new Proxy([] as unknown[] as Table, {
       has(target, p) {
-        console.log('has:', p)
+        if (p === unProxySymbol) {
+          return true
+        }
         if (typeof p !== 'symbol') {
           let id = +p
           if (Number.isInteger(id)) {
@@ -84,7 +149,6 @@ export function proxyDB<Dict extends { [table: string]: object[] }>(
         return Reflect.has(target, p)
       },
       set(target, p, value, receiver) {
-        console.log('set:', p)
         if (p === 'length') {
           delete_by_length.run(value)
           return true
@@ -103,28 +167,28 @@ export function proxyDB<Dict extends { [table: string]: object[] }>(
         return Reflect.set(target, p, value, receiver)
       },
       get(target, p, receiver) {
-        console.log('get:', p)
         if (p === 'length') {
           return count.get()
         }
         if (p === 'push') {
-          return function () {
-            for (let i = 0; i < arguments.length; i++) {
-              insert_run(arguments[i])
-            }
-            return count.get()
-          }
+          return push
+        }
+        if (p === unProxySymbol) {
+          return select_all.all()
         }
         if (typeof p !== 'symbol') {
           let id = +p
           if (Number.isInteger(id)) {
-            return proxyRow(table, rowProxyMap, id)
+            if (count_by_id.get(id) === 1) {
+              return proxyRow(id)
+            }
+            return undefined // this row doesn't exist
           }
         }
         if (p === Symbol.iterator) {
           return function* () {
             for (let id of select_id.all()) {
-              yield proxyRow(table, rowProxyMap, id)
+              yield proxyRow(id)
             }
           }
         }
@@ -134,28 +198,7 @@ export function proxyDB<Dict extends { [table: string]: object[] }>(
     tableProxyMap.set(table, proxy)
     return proxy
   }
-  function proxyRow<Name extends TableName>(
-    table: string,
-    rowProxyMap: Map<number, Row<Name>>,
-    id: number,
-  ): Row<Name> {
-    if (rowProxyMap.has(id)) {
-      return rowProxyMap.get(id)
-    }
 
-    let proxy = new Proxy({} as unknown as Row<Name>, {
-      set(target, p, value, receiver) {
-        console.log('row.set:', p, value)
-        return Reflect.set(target, p, value, receiver)
-      },
-      get(target, p, receiver) {
-        console.log('row.get:', p)
-        return Reflect.get(target, p, receiver)
-      },
-    })
-    rowProxyMap.set(id, proxy)
-    return proxy
-  }
   let table_dict = {} as Dict
   for (let table in tableFields) {
     let fields = tableFields[table]
