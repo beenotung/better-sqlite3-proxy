@@ -1,36 +1,13 @@
 import DB from 'better-sqlite3-helper'
 import { join } from 'path'
-import { proxyDB } from '../src/proxy'
+import { proxyKeyValueDB } from '../src/key-value-proxy'
 
 export let db = DB({
   path: join('data', 'sqlite3.db'),
-  migrate: {
-    migrations: [
-      /* sql */ `
--- Up
-create table if not exists user (
-  id integer primary key
-, username text not null unique
-);
--- Down
-drop table user;
-`,
-      /* sql */ `
--- Up
-create table if not exists post (
-  id integer primary key
-, user_id integer not null references user (id)
-, content text not null
-, created_at timestamp not null default current_timestamp
-);
--- Down
-drop table post;
-`,
-    ],
-  },
+  migrate: false,
 })
 
-let proxy = proxyDB<{
+let proxy = proxyKeyValueDB<{
   user: {
     id?: number
     username: string
