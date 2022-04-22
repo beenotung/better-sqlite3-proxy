@@ -1,6 +1,6 @@
 # better-sqlite3-proxy
 
-Transparently proxy sqlite tables as a dictionary of arrays
+Efficiently proxy sqlite tables and access data as typical array of objects.
 
 [![npm Package Version](https://img.shields.io/npm/v/better-sqlite3-proxy.svg?maxAge=2592000)](https://www.npmjs.com/package/better-sqlite3-proxy)
 
