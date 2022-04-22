@@ -1,4 +1,3 @@
-import DB from 'better-sqlite3-helper'
 import { DBInstance, newDB } from 'better-sqlite3-schema'
 import { join } from 'path'
 import { proxySchema } from '../src/schema-proxy'
