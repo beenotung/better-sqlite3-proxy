@@ -70,6 +70,11 @@ drop table post;
       { id: 2, username: 'Charlie' },
     ])
   })
+  it('should delete row by id', () => {
+    expect(proxy.user.length).to.equals(2)
+    delete proxy.user[2]
+    expect(proxy.user.length).to.equals(1)
+  })
   it('should truncate table', () => {
     expect(proxy.user.length).not.equals(0)
     proxy.user.length = 0

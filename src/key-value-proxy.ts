@@ -28,8 +28,9 @@ create table if not exists ${table} (
       .prepare(/* sql */ `select value from ${table} where id = ?`)
       .pluck()
     let count = db.prepare(/* sql */ `select count(*) from ${table}`).pluck()
+    let delete_by_id = db.prepare(/* sql */ `delete from ${table} where id = ?`)
     let delete_by_length = db.prepare(
-      /* sql */ `delete from ${table} where id >= ?`,
+      /* sql */ `delete from ${table} where id > ?`,
     )
     let update = db.prepare(
       /* sql */ `update ${table} set value = :value where id = :id`,
@@ -113,6 +114,16 @@ create table if not exists ${table} (
           }
         }
         return Reflect.get(target, p, receiver)
+      },
+      deleteProperty(target, p) {
+        if (typeof p !== 'symbol') {
+          let id = +p
+          if (Number.isInteger(id)) {
+            delete_by_id.run(id)
+            return true
+          }
+        }
+        return Reflect.deleteProperty(target, p)
       },
     })
     tableProxyMap.set(table, proxy)

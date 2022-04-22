@@ -32,6 +32,8 @@ export function proxySchema<Dict extends { [table: string]: object[] }>(
     let select_all = db.prepare(/* sql */ `select * from ${table}`)
 
     let count = db.prepare(/* sql */ `select count(*) from ${table}`).pluck()
+
+    let delete_by_id = db.prepare(/* sql */ `delete from ${table} where id = ?`)
     let delete_by_length = db.prepare(
       /* sql */ `delete from ${table} where id > ?`,
     )
@@ -185,6 +187,16 @@ export function proxySchema<Dict extends { [table: string]: object[] }>(
           }
         }
         return Reflect.get(target, p, receiver)
+      },
+      deleteProperty(target, p) {
+        if (typeof p !== 'symbol') {
+          let id = +p
+          if (Number.isInteger(id)) {
+            delete_by_id.run(id)
+            return true
+          }
+        }
+        return Reflect.deleteProperty(target, p)
       },
     })
     tableProxyMap.set(table, proxy)
