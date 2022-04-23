@@ -9,7 +9,8 @@
     "sync operation",
     "database",
     "data access object",
-    "better-sqlite3"
+    "better-sqlite3",
+    "typescript"
   ],
   "author": "Beeno Tung <aabbcc1241@yahoo.com.hk> (https://beeno-tung.surge.sh)",
   "license": "BSD-2-Clause",
