@@ -23,9 +23,14 @@
   },
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
+  "files": [
+    "dist"
+  ],
   "scripts": {
     "build": "rimraf dist && tsc -p .",
-    "test": "tsc -p . --noEmit"
+    "mocha": "ts-mocha test/*.spec.ts",
+    "type-check": "tsc -p . --noEmit",
+    "test": "npm run mocha && npm run type-check"
   },
   "dependencies": {
     "better-sqlite3": "^7.5.0",
