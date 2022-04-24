@@ -2,7 +2,7 @@ import { DBInstance, newDB } from 'better-sqlite3-schema'
 import { expect } from 'chai'
 import { join } from 'path'
 import { proxyKeyValue } from '../src/key-value-proxy'
-import { unProxy } from '../src/un-proxy'
+import { unProxy } from '../src/extension'
 import { DBProxy } from './types'
 
 context('proxyDB TestSuit', () => {
