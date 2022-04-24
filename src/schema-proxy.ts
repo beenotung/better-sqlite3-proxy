@@ -154,6 +154,9 @@ export function proxySchema<Dict extends { [table: string]: object[] }>(
           )
         },
         set(target, p, value, receiver) {
+          if (p === 'id') {
+            throw new Error('cannot update id')
+          }
           if (typeof p === 'string' && fields.includes(p)) {
             update_one_column_dict[p].run({ id, [p]: value })
             return true
@@ -163,6 +166,9 @@ export function proxySchema<Dict extends { [table: string]: object[] }>(
         get(target, p, receiver) {
           if (p === unProxySymbol) {
             return select_all_column_by_id.get(id)
+          }
+          if (p === 'id') {
+            return id
           }
           if (typeof p === 'string' && fields.includes(p)) {
             return select_one_column_dict[p].get(id)
