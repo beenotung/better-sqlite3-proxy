@@ -88,6 +88,12 @@ export function proxySchema<Dict extends { [table: string]: object[] }>(
 
     let select_id = db.prepare(/* sql */ `select id from ${table}`).pluck()
 
+    function* iterator() {
+      for (let id of select_id.all()) {
+        yield proxyRow(id)
+      }
+    }
+
     function push() {
       for (let i = 0; i < arguments.length; i++) {
         insert_run(arguments[i])
@@ -161,14 +167,15 @@ export function proxySchema<Dict extends { [table: string]: object[] }>(
         return Reflect.set(target, p, value, receiver)
       },
       get(target, p, receiver) {
-        if (p === 'length') {
-          return count.get()
-        }
-        if (p === 'push') {
-          return push
-        }
-        if (p === unProxySymbol) {
-          return select_all.all()
+        switch (p) {
+          case unProxySymbol:
+            return select_all.all()
+          case Symbol.iterator:
+            return iterator
+          case 'length':
+            return count.get()
+          case 'push':
+            return push
         }
         if (typeof p !== 'symbol') {
           let id = +p
@@ -177,13 +184,6 @@ export function proxySchema<Dict extends { [table: string]: object[] }>(
               return proxyRow(id)
             }
             return undefined // this row doesn't exist
-          }
-        }
-        if (p === Symbol.iterator) {
-          return function* () {
-            for (let id of select_id.all()) {
-              yield proxyRow(id)
-            }
           }
         }
         return Reflect.get(target, p, receiver)
