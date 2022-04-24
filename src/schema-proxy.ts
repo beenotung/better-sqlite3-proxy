@@ -1,6 +1,6 @@
 import { Statement } from 'better-sqlite3'
 import { DBInstance } from 'better-sqlite3-schema'
-import { unProxySymbol } from './un-proxy'
+import { unProxySymbol } from './extension'
 
 export function proxySchema<Dict extends { [table: string]: object[] }>(
   db: DBInstance,

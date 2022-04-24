@@ -1,5 +1,5 @@
 import { DBInstance } from 'better-sqlite3-schema'
-import { unProxySymbol } from './un-proxy'
+import { unProxySymbol } from './extension'
 
 export function proxyKeyValue<Dict extends { [table: string]: object[] }>(
   db: DBInstance,
