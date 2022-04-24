@@ -94,7 +94,7 @@ export function proxySchema<Dict extends { [table: string]: object[] }>(
       }
     }
 
-    function push() {
+    function push(): number {
       for (let i = 0; i < arguments.length; i++) {
         insert_run(arguments[i])
       }
