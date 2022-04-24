@@ -16,6 +16,23 @@ Efficiently proxy sqlite tables and access data as typical array of objects.
   - [x] delete
 - [ ] auto expand foreign key reference into nested objects like [ref-db](https://github.com/beenotung/ref-db)
 
+### Array Operations Mapping
+
+| Array Operation       | Mapped SQL Operation        |
+| --------------------- | --------------------------- |
+| array.push            | insert                      |
+| array[id] = object    | insert or update            |
+| find(array, filter)   | select where filter limit 1 |
+| filter(array, filter) | select where filter         |
+| delete array[id]      | delete                      |
+| array.length = 0      | delete where id > length    |
+
+### Lazy Evaluation
+
+The results from mapped operations are proxy-ed object identified by id.
+Getting the properties on the object will trigger select on corresponding column, and
+setting the properties will trigger update on corresponding column.
+
 ## Usage Example
 
 <details>

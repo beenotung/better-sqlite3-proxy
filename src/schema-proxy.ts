@@ -1,6 +1,6 @@
 import { Statement } from 'better-sqlite3'
 import { DBInstance } from 'better-sqlite3-schema'
-import { unProxySymbol } from './extension'
+import { unProxySymbol, findSymbol, filterSymbol } from './extension'
 
 export function proxySchema<Dict extends { [table: string]: object[] }>(
   db: DBInstance,
@@ -101,7 +101,46 @@ export function proxySchema<Dict extends { [table: string]: object[] }>(
       return count.get()
     }
 
-    function proxyRow<Name extends TableName>(id: number): Row<Name> {
+    let find_dict: Record<string, Statement> = {}
+    function find(filter: Partial<Row<Name>>): Row<Name> | undefined {
+      let keys = Object.keys(filter)
+      if (keys.length === 0) {
+        throw new Error('find() expects non-empty filter')
+      }
+      let key = keys.join('|')
+      let select =
+        find_dict[key] ||
+        (find_dict[key] = db
+          .prepare(
+            /* sql */ `select id from ${table} where ${keys
+              .map(key => `${key} = :${key}`)
+              .join(' and ')} limit 1`,
+          )
+          .pluck())
+      let id = select.get(filter)
+      return id ? proxyRow(id) : undefined
+    }
+
+    let filter_dict: Record<string, Statement> = {}
+    function filter(filter: Partial<Row<Name>>): Array<Row<Name>> {
+      let keys = Object.keys(filter)
+      if (keys.length === 0) {
+        throw new Error('filter() expects non-empty filter')
+      }
+      let key = keys.join('|')
+      let select =
+        filter_dict[key] ||
+        (filter_dict[key] = db
+          .prepare(
+            /* sql */ `select id from ${table} where ${keys
+              .map(key => `${key} = :${key}`)
+              .join(' and ')}`,
+          )
+          .pluck())
+      return select.all(filter).map(proxyRow)
+    }
+
+    let proxyRow = <Name extends TableName>(id: number): Row<Name> => {
       let proxy = rowProxyMap.get(id)
       if (proxy) {
         return rowProxyMap.get(id)!
@@ -137,8 +176,14 @@ export function proxySchema<Dict extends { [table: string]: object[] }>(
 
     let proxy = new Proxy([] as unknown[] as Table, {
       has(target, p) {
-        if (p === unProxySymbol) {
-          return true
+        switch (p) {
+          case unProxySymbol:
+          case findSymbol:
+          case filterSymbol:
+          case Symbol.iterator:
+          case 'length':
+          case 'push':
+            return true
         }
         if (typeof p !== 'symbol') {
           let id = +p
@@ -170,6 +215,10 @@ export function proxySchema<Dict extends { [table: string]: object[] }>(
         switch (p) {
           case unProxySymbol:
             return select_all.all()
+          case findSymbol:
+            return find
+          case filterSymbol:
+            return filter
           case Symbol.iterator:
             return iterator
           case 'length':
