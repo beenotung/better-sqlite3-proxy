@@ -44,7 +44,7 @@ More Examples in [schema-proxy.spec.ts](./test/schema-proxy.spec.ts)
 
 ```typescript
 import DB from 'better-sqlite3-helper'
-import { proxyDB } from 'better-sqlite3-proxy'
+import { proxyDB, find, filter } from 'better-sqlite3-proxy'
 
 let db = DB({
   path: 'dev.sqlite3',
@@ -107,7 +107,13 @@ console.log(unProxy(proxy.post[1])) // { id: 1, user_id: 1, content: 'Hello Worl
 proxy.user[1].username = 'Alice'
 
 // update multiple columns
-proxy.post[1] = { content: 'Hello Sqlite', created_at: '2022-04-22 08:30:00' }
+proxy.post[1] = { content: 'Hello SQLite', created_at: '2022-04-22 08:30:00' }
+
+// find by columns
+console.log(find(proxy.user, { username: 'Alice' }).id) // 1
+
+// filter by columns
+console.log(filter(proxy.post, { user_id: 1 })[0].content) // 'Hello SQLite
 
 // delete record
 delete proxy.user[2]
