@@ -135,7 +135,7 @@ More Examples in [key-value.spec.ts](./test/key-value-proxy.spec.ts)
 
 ```typescript
 import DB from 'better-sqlite3-helper'
-import { proxyDB } from 'better-sqlite3-proxy'
+import { proxyDB, find, filter } from 'better-sqlite3-proxy'
 
 export let db = DB({
   path: 'dev.sqlite3',
@@ -144,6 +144,7 @@ export let db = DB({
 
 type DBProxy = {
   users: {
+    id: number
     username: string
   }[]
 }
@@ -151,8 +152,8 @@ type DBProxy = {
 let proxy = proxyKeyValue<DBProxy>(db)
 
 // auto create users table, then insert record
-proxy.users[1] = { username: 'alice' }
-proxy.users.push({ username: 'Bob' })
+proxy.users[1] = { id: 1, username: 'alice' }
+proxy.users.push({ id: 2, username: 'Bob' })
 
 // select from users table
 console.log(proxy.users[2]) // { username: 'Bob' }
@@ -160,6 +161,12 @@ console.log(proxy.users[2]) // { username: 'Bob' }
 // update users table
 proxy.users[1] = { username: 'Alice' }
 console.log(proxy.users[1]) // { username: 'Alice' }
+
+// find by columns
+console.log(find(proxy.user, { username: 'Alice' }).id) // 1
+
+// filter by columns
+console.log(filter(proxy.user, { username: 'Bob' })[0].id) // 2
 
 // delete record
 delete proxy.users[2]

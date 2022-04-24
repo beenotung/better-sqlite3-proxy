@@ -2,7 +2,7 @@ import { DBInstance, newDB } from 'better-sqlite3-schema'
 import { expect } from 'chai'
 import { join } from 'path'
 import { proxyKeyValue } from '../src/key-value-proxy'
-import { unProxy } from '../src/extension'
+import { filter, find, unProxy } from '../src/extension'
 import { DBProxy } from './types'
 
 context('proxyDB TestSuit', () => {
@@ -51,5 +51,32 @@ context('proxyDB TestSuit', () => {
     expect(proxy.user.length).to.equals(0)
     expect(proxy.user[1]).to.be.undefined
     expect(proxy.user[2]).to.be.undefined
+  })
+  it('should find record by non-id column', () => {
+    proxy.user[1] = { id: 1, username: 'Alice' }
+    proxy.user[2] = { id: 2, username: 'Bob' }
+    expect(find(proxy.user, { username: 'Alice' })).to.deep.equals({
+      id: 1,
+      username: 'Alice',
+    })
+    expect(find(proxy.user, { username: 'Bob' })).to.deep.equals({
+      id: 2,
+      username: 'Bob',
+    })
+  })
+  it('should find record by multiple columns', () => {
+    proxy.post.length = 0
+    proxy.post[1] = { id: 1, user_id: 1, content: 'Hello from Alice' }
+    proxy.post[2] = { id: 2, user_id: 2, content: 'Hello from Bob' }
+    proxy.post[3] = { id: 3, user_id: 1, content: 'Hi Bob' }
+    let match = find(proxy.post, { user_id: 1, content: 'Hi Bob' })
+    expect(match).to.deep.equals({ id: 3, user_id: 1, content: 'Hi Bob' })
+  })
+  it('should filter records by any columns', () => {
+    let matches = filter(proxy.post, { user_id: 1 })
+    expect(matches).to.deep.equals([
+      { id: 1, user_id: 1, content: 'Hello from Alice' },
+      { id: 3, user_id: 1, content: 'Hi Bob' },
+    ])
   })
 })

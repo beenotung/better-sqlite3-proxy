@@ -1,10 +1,12 @@
+import { Statement } from 'better-sqlite3'
 import { DBInstance } from 'better-sqlite3-schema'
-import { unProxySymbol } from './extension'
+import { filterSymbol, findSymbol, unProxySymbol } from './extension'
 
 export function proxyKeyValue<Dict extends { [table: string]: object[] }>(
   db: DBInstance,
 ): Dict {
   type TableName = keyof Dict
+  type Row<Name extends TableName> = Dict[Name][number]
   let tableProxyMap = new Map<string, Dict[TableName]>()
   function encode(object: object) {
     return JSON.stringify(object)
@@ -48,10 +50,73 @@ create table if not exists ${table} (
     let select_by_offset = db.prepare(
       /* sql */ `select value from ${table} limit 1 offset ?`,
     )
+
+    function push(): number {
+      for (let i = 0; i < arguments.length; i++) {
+        insert_without_id.run(encode(arguments[i]))
+      }
+      return count.get()
+    }
+
+    function* iterator() {
+      for (let offset = 0; ; offset++) {
+        let row = select_by_offset.get(offset)
+        if (row) {
+          yield decode(row.value)
+        } else {
+          break
+        }
+      }
+    }
+
+    let find_dict: Record<string, Statement> = {}
+    function find(filter: Partial<Row<Name>>): Row<Name> | undefined {
+      let keys = Object.keys(filter)
+      if (keys.length === 0) {
+        throw new Error('find() expects non-empty filter')
+      }
+      let key = keys.join('|')
+      let select =
+        find_dict[key] ||
+        (find_dict[key] = db
+          .prepare(
+            /* sql */ `select value from ${table} where ${keys
+              .map(key => `json_extract(value, '$.${key}') = :${key}`)
+              .join(' and ')} limit 1`,
+          )
+          .pluck())
+      return decode(select.get(filter))
+    }
+
+    let filter_dict: Record<string, Statement> = {}
+    function filter(filter: Partial<Row<Name>>): Array<Row<Name>> {
+      let keys = Object.keys(filter)
+      if (keys.length === 0) {
+        throw new Error('filter() expects non-empty filter')
+      }
+      let key = keys.join('|')
+      let select =
+        filter_dict[key] ||
+        (filter_dict[key] = db
+          .prepare(
+            /* sql */ `select value from ${table} where ${keys
+              .map(key => `json_extract(value,'$.${key}') = :${key}`)
+              .join(' and ')}`,
+          )
+          .pluck())
+      return select.all(filter).map(decode)
+    }
+
     let proxy = new Proxy([] as unknown[] as Table, {
       has(target, p) {
-        if (p === unProxySymbol) {
-          return true
+        switch (p) {
+          case unProxySymbol:
+          case findSymbol:
+          case filterSymbol:
+          case Symbol.iterator:
+          case 'length':
+          case 'push':
+            return true
         }
         if (typeof p !== 'symbol') {
           let id = +p
@@ -81,36 +146,24 @@ create table if not exists ${table} (
         return Reflect.set(target, p, value, receiver)
       },
       get(target, p, receiver) {
-        if (p === unProxySymbol) {
-          return select_all.all().map(decode)
-        }
-        if (p === 'length') {
-          return count.get()
-        }
-        if (p === 'push') {
-          return function () {
-            for (let i = 0; i < arguments.length; i++) {
-              insert_without_id.run(encode(arguments[i]))
-            }
+        switch (p) {
+          case unProxySymbol:
+            return select_all.all().map(decode)
+          case findSymbol:
+            return find
+          case filterSymbol:
+            return filter
+          case Symbol.iterator:
+            return iterator
+          case 'length':
             return count.get()
-          }
+          case 'push':
+            return push
         }
         if (typeof p !== 'symbol') {
           let id = +p
           if (Number.isInteger(id)) {
             return decode(select_by_id.get(id))
-          }
-        }
-        if (p === Symbol.iterator) {
-          return function* () {
-            for (let offset = 0; ; offset++) {
-              let row = select_by_offset.get(offset)
-              if (row) {
-                yield decode(row.value)
-              } else {
-                break
-              }
-            }
           }
         }
         return Reflect.get(target, p, receiver)
