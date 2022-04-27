@@ -4,11 +4,16 @@ import { join } from 'path'
 import { proxyKeyValue } from '../src/key-value-proxy'
 import { filter, find, unProxy } from '../src/extension'
 import { DBProxy } from './types'
+import { existsSync, unlinkSync } from 'fs'
 
 context('proxyDB TestSuit', () => {
+  let dbFile = join('data', 'key-value.sqlite3')
+  if (existsSync(dbFile)) {
+    unlinkSync(dbFile)
+  }
   let db: DBInstance
   db = newDB({
-    path: join('data', 'key-value.sqlite3'),
+    path: dbFile,
     migrate: false,
   })
   let proxy = proxyKeyValue<DBProxy>(db)

@@ -4,11 +4,16 @@ import { join } from 'path'
 import { proxySchema } from '../src/schema-proxy'
 import { filter, find, unProxy } from '../src/extension'
 import { DBProxy } from './types'
+import { existsSync, unlinkSync } from 'fs'
 
 context('proxyDB TestSuit', () => {
+  let dbFile = join('data', 'schema.sqlite3')
+  if (existsSync(dbFile)) {
+    unlinkSync(dbFile)
+  }
   let db: DBInstance
   db = newDB({
-    path: join('data', 'schema.sqlite3'),
+    path: dbFile,
     migrate: {
       migrations: [
         /* sql */ `
