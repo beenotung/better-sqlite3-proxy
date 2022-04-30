@@ -54,7 +54,7 @@ export function proxySchema<Dict extends { [table: string]: object[] }>(
             key => `${key} = :${key}`,
           )} where id = :id`,
         ))
-      update.run(row)
+      update.run({ id, ...row })
     }
 
     let update_one_column_dict: Record<string, Statement> = {}

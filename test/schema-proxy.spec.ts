@@ -89,12 +89,18 @@ drop table post;
     proxy.user[2] = { username: 'Bob' }
     expect(unProxy(proxy.user[2])).to.deep.equals({ id: 2, username: 'Bob' })
   })
-  it('should update row', () => {
+  it('should update a specific column', () => {
     proxy.user[2].username = 'Charlie'
     expect(unProxy(proxy.user[2])).to.deep.equals({
       id: 2,
       username: 'Charlie',
     })
+  })
+  it('should update multiple columns', () => {
+    proxy.post[1] = { user_id: 2, content: 'B' }
+    proxy.post[1] = { user_id: 1, content: 'A' }
+    expect(proxy.post[1].user_id).to.equals(1)
+    expect(proxy.post[1].content).to.equals('A')
   })
   it('should select column', () => {
     expect(proxy.user[2].username).to.equals('Charlie')
@@ -112,6 +118,7 @@ drop table post;
   })
   it('should truncate table', () => {
     expect(proxy.user.length).not.equals(0)
+    proxy.post.length = 0
     proxy.user.length = 0
     expect(proxy.user.length).to.equals(0)
     expect(proxy.user[1]).to.be.undefined

@@ -53,9 +53,15 @@ context('proxyDB TestSuit', () => {
     proxy.user[2] = { username: 'Bob' }
     expect(unProxy(proxy.user[2])).to.deep.equals({ username: 'Bob' })
   })
-  it('should update row', () => {
+  it('should update a specific column', () => {
     proxy.user[2] = { username: 'Charlie' }
     expect(unProxy(proxy.user[2])).to.deep.equals({ username: 'Charlie' })
+  })
+  it('should update multiple columns', () => {
+    proxy.post[1] = { user_id: 2, content: 'B' }
+    proxy.post[1] = { user_id: 1, content: 'A' }
+    expect(proxy.post[1].user_id).to.equals(1)
+    expect(proxy.post[1].content).to.equals('A')
   })
   it('should select column', () => {
     expect(proxy.user[2].username).to.equals('Charlie')
