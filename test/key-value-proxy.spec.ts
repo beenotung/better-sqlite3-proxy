@@ -3,20 +3,37 @@ import { expect } from 'chai'
 import { join } from 'path'
 import { proxyKeyValue } from '../src/key-value-proxy'
 import { filter, find, unProxy } from '../src/extension'
-import { DBProxy } from './types'
 import { existsSync, unlinkSync } from 'fs'
 
+type DBProxy = {
+  user: {
+    id?: number
+    username: string
+  }[]
+  post: {
+    id?: number
+    user_id: number
+    content: string
+    created_at?: string
+  }[]
+}
+
 context('proxyDB TestSuit', () => {
-  let dbFile = join('data', 'key-value.sqlite3')
-  if (existsSync(dbFile)) {
-    unlinkSync(dbFile)
-  }
   let db: DBInstance
-  db = newDB({
-    path: dbFile,
-    migrate: false,
+  let proxy: DBProxy
+
+  before(() => {
+    let dbFile = join('data', 'key-value.sqlite3')
+    if (existsSync(dbFile)) {
+      unlinkSync(dbFile)
+    }
+    db = newDB({
+      path: dbFile,
+      migrate: false,
+    })
+
+    proxy = proxyKeyValue<DBProxy>(db)
   })
-  let proxy = proxyKeyValue<DBProxy>(db)
 
   it('should reset table', () => {
     proxy.user.length = 0

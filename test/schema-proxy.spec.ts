@@ -3,20 +3,35 @@ import { expect } from 'chai'
 import { join } from 'path'
 import { proxySchema } from '../src/schema-proxy'
 import { filter, find, unProxy } from '../src/extension'
-import { DBProxy } from './types'
 import { existsSync, unlinkSync } from 'fs'
 
+export type DBProxy = {
+  user: {
+    id?: number
+    username: string
+  }[]
+  post: {
+    id?: number
+    user_id: number
+    content: string
+    created_at?: string
+  }[]
+}
+
 context('proxyDB TestSuit', () => {
-  let dbFile = join('data', 'schema.sqlite3')
-  if (existsSync(dbFile)) {
-    unlinkSync(dbFile)
-  }
   let db: DBInstance
-  db = newDB({
-    path: dbFile,
-    migrate: {
-      migrations: [
-        /* sql */ `
+  let proxy: DBProxy
+
+  before(() => {
+    let dbFile = join('data', 'schema.sqlite3')
+    if (existsSync(dbFile)) {
+      unlinkSync(dbFile)
+    }
+    db = newDB({
+      path: dbFile,
+      migrate: {
+        migrations: [
+          /* sql */ `
 -- Up
 create table if not exists user (
   id integer primary key
@@ -25,7 +40,7 @@ create table if not exists user (
 -- Down
 drop table user;
 `,
-        /* sql */ `
+          /* sql */ `
 -- Up
 create table if not exists post (
   id integer primary key
@@ -36,12 +51,13 @@ create table if not exists post (
 -- Down
 drop table post;
 `,
-      ],
-    },
-  })
-  let proxy = proxySchema<DBProxy>(db, {
-    user: ['id', 'username'],
-    post: ['id', 'user_id', 'content', 'created_at'],
+        ],
+      },
+    })
+    proxy = proxySchema<DBProxy>(db, {
+      user: ['id', 'username'],
+      post: ['id', 'user_id', 'content', 'created_at'],
+    })
   })
 
   it('should reset table', () => {
