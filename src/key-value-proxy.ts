@@ -51,11 +51,17 @@ create table if not exists ${table} (
       /* sql */ `select value from ${table} limit 1 offset ?`,
     )
 
+    let select_last_id = db
+      .prepare(/* sql */ `select max(id) from ${table}`)
+      .pluck()
+
     function push(): number {
+      let last_id: number = 0
       for (let i = 0; i < arguments.length; i++) {
-        insert_without_id.run(encode(arguments[i]))
+        last_id = insert_without_id.run(encode(arguments[i]))
+          .lastInsertRowid as number
       }
-      return count.get()
+      return last_id || select_last_id.get()
     }
 
     function* iterator() {

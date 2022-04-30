@@ -16,6 +16,9 @@ type DBProxy = {
     content: string
     created_at?: string
   }[]
+  log: {
+    id?: number
+  }[]
 }
 
 context('proxyDB TestSuit', () => {
@@ -100,5 +103,23 @@ context('proxyDB TestSuit', () => {
       { id: 1, user_id: 1, content: 'Hello from Alice' },
       { id: 3, user_id: 1, content: 'Hi Bob' },
     ])
+  })
+  context('proxy.table.push()', () => {
+    before(() => {
+      proxy.log.length = 0
+    })
+    it('should returns id of last insert row', () => {
+      expect(proxy.log.push({})).to.equals(1)
+    })
+    it('should reuse id of last row', () => {
+      expect(proxy.log.push({})).to.equals(2)
+      delete proxy.log[2]
+      expect(proxy.log.push({})).to.equals(2)
+    })
+    it('should not reuse id of non-last row', () => {
+      expect(proxy.log.push({})).to.equals(3)
+      delete proxy.log[2]
+      expect(proxy.log.push({})).to.equals(4)
+    })
   })
 })
