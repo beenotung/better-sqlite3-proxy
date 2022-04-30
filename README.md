@@ -20,12 +20,12 @@ Efficiently proxy sqlite tables and access data as typical array of objects.
 
 | Array Operation       | Mapped SQL Operation        |
 | --------------------- | --------------------------- |
-| array.push            | insert                      |
+| array.push(...object) | insert                      |
 | array[id] = object    | insert or update            |
 | find(array, filter)   | select where filter limit 1 |
 | filter(array, filter) | select where filter         |
 | delete array[id]      | delete                      |
-| array.length = 0      | delete where id > length    |
+| array.length = length | delete where id > length    |
 
 ### Lazy Evaluation
 
