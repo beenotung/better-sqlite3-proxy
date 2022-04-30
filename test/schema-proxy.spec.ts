@@ -204,4 +204,12 @@ drop table post;
     expect(proxy.post[3].content).to.equals('new')
     expect(proxy.post[3].user_id).to.equals(2)
   })
+  it('should save foreign key when inserting row including reference row', () => {
+    let id = proxy.post.push({
+      author: proxy.user[2],
+      content: 'with author',
+    } as Partial<Post> as Post)
+    expect(proxy.post[id].content).to.equals('with author')
+    expect(proxy.post[id].user_id).to.equals(2)
+  })
 })

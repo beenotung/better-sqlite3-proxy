@@ -94,7 +94,18 @@ export function proxySchema<Dict extends { [table: string]: object[] }>(
 
     let insert_dict: Record<string, Statement> = {}
     let insert_run = (row: Record<string, any>): number => {
-      let keys = Object.keys(row)
+      let params: Record<string, any> = {}
+      let keys: string[] = []
+      for (let key in row) {
+        if (tableFieldNames.includes(key)) {
+          keys.push(key)
+          params[key] = row[key]
+        } else if (relationFieldNames.includes(key)) {
+          let field = relationFieldDict[key].field
+          keys.push(field)
+          params[field] = row[key].id
+        }
+      }
       if (keys.length === 0) {
         return insert_empty.run().lastInsertRowid as number
       }
@@ -106,7 +117,7 @@ export function proxySchema<Dict extends { [table: string]: object[] }>(
             key => ':' + key,
           )})`,
         ))
-      return insert.run(row).lastInsertRowid as number
+      return insert.run(params).lastInsertRowid as number
     }
 
     let count_by_id = db
