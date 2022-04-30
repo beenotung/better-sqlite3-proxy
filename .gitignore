@@ -3,3 +3,4 @@ data/
 pnpm-lock.yaml
 dist/
 *.tgz
+dev.sqlite3*

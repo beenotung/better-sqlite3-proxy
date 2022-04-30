@@ -2,17 +2,27 @@ import { Statement } from 'better-sqlite3'
 import { DBInstance } from 'better-sqlite3-schema'
 import { unProxySymbol, findSymbol, filterSymbol } from './extension'
 
+export type TableField = string | RelationField
+
+export type RelationField = [
+  name: string,
+  references: { field: string; table: string },
+]
+
 export function proxySchema<Dict extends { [table: string]: object[] }>(
   db: DBInstance,
-  tableFields: Record<keyof Dict, string[]>,
+  tableFields: Record<keyof Dict, TableField[]>,
 ): Dict {
   type TableName = keyof Dict
   type Row<Name extends TableName> = Dict[Name][number]
   let tableProxyMap = new Map<string, Dict[TableName]>()
 
+  let tableProxyRowDict: Record<string, (id: number) => Row<TableName>> = {}
+
   function proxyTable<Name extends TableName>(
     table: string,
-    fields: string[],
+    tableFieldNames: string[],
+    relationFields: RelationField[],
   ): Dict[Name] {
     type Table = Dict[Name]
     if (tableProxyMap.has(table)) {
@@ -20,8 +30,11 @@ export function proxySchema<Dict extends { [table: string]: object[] }>(
     }
     let rowProxyMap = new Map<number, Row<Name>>()
 
+    let relationFieldNames: string[] = relationFields.map(([field]) => field)
+    let relationFieldDict = Object.fromEntries(relationFields)
+
     let select_one_column_dict: Record<string, Statement> = {}
-    for (let field of fields) {
+    for (let field of tableFieldNames) {
       select_one_column_dict[field] = db
         .prepare(/* sql */ `select ${field} from ${table} where id = ?`)
         .pluck()
@@ -58,7 +71,7 @@ export function proxySchema<Dict extends { [table: string]: object[] }>(
     }
 
     let update_one_column_dict: Record<string, Statement> = {}
-    for (let field of fields) {
+    for (let field of tableFieldNames) {
       update_one_column_dict[field] = db.prepare(
         /* sql */ `update ${table} set ${field} = :${field} where id = :id`,
       )
@@ -153,7 +166,9 @@ export function proxySchema<Dict extends { [table: string]: object[] }>(
         has(target, p) {
           return (
             p === unProxySymbol ||
-            (typeof p === 'string' && fields.includes(p)) ||
+            (typeof p === 'string' &&
+              (tableFieldNames.includes(p) ||
+                relationFieldNames.includes(p))) ||
             Reflect.has(target, p)
           )
         },
@@ -161,9 +176,16 @@ export function proxySchema<Dict extends { [table: string]: object[] }>(
           if (p === 'id') {
             throw new Error('cannot update id')
           }
-          if (typeof p === 'string' && fields.includes(p)) {
-            update_one_column_dict[p].run({ id, [p]: value })
-            return true
+          if (typeof p === 'string') {
+            if (tableFieldNames.includes(p)) {
+              update_one_column_dict[p].run({ id, [p]: value })
+              return true
+            }
+            if (relationFieldNames.includes(p)) {
+              let field: string = relationFieldDict[p].field
+              update_one_column_dict[field].run({ id, [field]: value.id })
+              return true
+            }
           }
           return Reflect.set(target, p, value, receiver)
         },
@@ -174,8 +196,17 @@ export function proxySchema<Dict extends { [table: string]: object[] }>(
           if (p === 'id') {
             return id
           }
-          if (typeof p === 'string' && fields.includes(p)) {
-            return select_one_column_dict[p].get(id)
+          if (typeof p === 'string') {
+            if (tableFieldNames.includes(p)) {
+              return select_one_column_dict[p].get(id)
+            }
+            if (relationFieldNames.includes(p)) {
+              let relationField = relationFieldDict[p]
+              let proxyRow = tableProxyRowDict[relationField.table]
+              let foreign_id =
+                select_one_column_dict[relationField.field].get(id)
+              return proxyRow(foreign_id)
+            }
           }
           return Reflect.get(target, p, receiver)
         },
@@ -183,6 +214,7 @@ export function proxySchema<Dict extends { [table: string]: object[] }>(
       rowProxyMap.set(id, proxy)
       return proxy
     }
+    tableProxyRowDict[table] = proxyRow
 
     let proxy = new Proxy([] as unknown[] as Table, {
       has(target, p) {
@@ -265,7 +297,16 @@ export function proxySchema<Dict extends { [table: string]: object[] }>(
   let table_dict = {} as Dict
   for (let table in tableFields) {
     let fields = tableFields[table]
-    table_dict[table] = proxyTable(table, fields)
+    let _tableFields: string[] = []
+    let _relationFields: RelationField[] = []
+    for (let field of fields) {
+      if (typeof field === 'string') {
+        _tableFields.push(field)
+      } else {
+        _relationFields.push(field)
+      }
+    }
+    table_dict[table] = proxyTable(table, _tableFields, _relationFields)
   }
   return table_dict
 }

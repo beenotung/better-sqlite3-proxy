@@ -14,7 +14,7 @@ Efficiently proxy sqlite tables and access data as typical array of objects.
   - [x] insert
   - [x] update
   - [x] delete
-- [ ] auto expand foreign key reference into nested objects like [ref-db](https://github.com/beenotung/ref-db)
+- [x] auto resolve reference row from foreign key into nested objects like [ref-db](https://github.com/beenotung/ref-db)
 
 ### Array Operations Mapping
 
@@ -44,7 +44,7 @@ More Examples in [schema-proxy.spec.ts](./test/schema-proxy.spec.ts)
 
 ```typescript
 import DB from 'better-sqlite3-helper'
-import { proxyDB, find, filter } from 'better-sqlite3-proxy'
+import { proxySchema, unProxy, find, filter } from 'better-sqlite3-proxy'
 
 let db = DB({
   path: 'dev.sqlite3',
@@ -74,22 +74,32 @@ drop table post;
   },
 })
 
+type User = {
+  id?: number
+  username: string
+}
+type Post = {
+  id?: number
+  user_id: number
+  content: string
+  created_at?: string
+  author?: User
+}
+
 type DBProxy = {
-  user: {
-    id?: number
-    username: string
-  }[]
-  post: {
-    id?: number
-    user_id: number
-    content: string
-    created_at?: string
-  }[]
+  user: User[]
+  post: Post[]
 }
 
 let proxy = proxySchema<DBProxy>(db, {
   user: ['id', 'username'],
-  post: ['id', 'user_id', 'content', 'created_at'],
+  post: [
+    'id',
+    'user_id',
+    'content',
+    'created_at',
+    ['author', { field: 'user_id', table: 'user' }],
+  ],
 })
 
 // insert record
@@ -100,6 +110,9 @@ proxy.post.push({ user_id: 1, content: 'Hello World' })
 // select a specific column
 console.log(proxy.user[1].username) // 'alice'
 
+// select a specific column from reference table
+console.log(proxy.post[1].author?.username) // 'alice'
+
 // select all columns of a record
 console.log(unProxy(proxy.post[1])) // { id: 1, user_id: 1, content: 'Hello World', created_at: '2022-04-21 23:30:00'}
 
@@ -107,10 +120,13 @@ console.log(unProxy(proxy.post[1])) // { id: 1, user_id: 1, content: 'Hello Worl
 proxy.user[1].username = 'Alice'
 
 // update multiple columns
-proxy.post[1] = { content: 'Hello SQLite', created_at: '2022-04-22 08:30:00' }
+proxy.post[1] = {
+  content: 'Hello SQLite',
+  created_at: '2022-04-22 08:30:00',
+} as Partial<Post> as Post
 
 // find by columns
-console.log(find(proxy.user, { username: 'Alice' }).id) // 1
+console.log(find(proxy.user, { username: 'Alice' })?.id) // 1
 
 // filter by columns
 console.log(filter(proxy.post, { user_id: 1 })[0].content) // 'Hello SQLite
@@ -120,8 +136,8 @@ delete proxy.user[2]
 console.log(proxy.user.length) // 1
 
 // truncate table
-proxy.users.length = 0
-console.log(proxy.users.length) // 0
+proxy.post.length = 0
+console.log(proxy.post.length) // 0
 ```
 
 </details>
@@ -135,7 +151,7 @@ More Examples in [key-value.spec.ts](./test/key-value-proxy.spec.ts)
 
 ```typescript
 import DB from 'better-sqlite3-helper'
-import { proxyDB, find, filter } from 'better-sqlite3-proxy'
+import { proxyKeyValue, find, filter } from 'better-sqlite3-proxy'
 
 export let db = DB({
   path: 'dev.sqlite3',
@@ -156,17 +172,17 @@ proxy.users[1] = { id: 1, username: 'alice' }
 proxy.users.push({ id: 2, username: 'Bob' })
 
 // select from users table
-console.log(proxy.users[2]) // { username: 'Bob' }
+console.log(proxy.users[1]) // { id: 1, username: 'alice' }
 
 // update users table
-proxy.users[1] = { username: 'Alice' }
-console.log(proxy.users[1]) // { username: 'Alice' }
+proxy.users[1] = { id: 1, username: 'Alice' }
+console.log(proxy.users[1]) // { id:1, username: 'Alice' }
 
 // find by columns
-console.log(find(proxy.user, { username: 'Alice' }).id) // 1
+console.log(find(proxy.users, { username: 'Alice' })?.id) // 1
 
 // filter by columns
-console.log(filter(proxy.user, { username: 'Bob' })[0].id) // 2
+console.log(filter(proxy.users, { username: 'Bob' })[0].id) // 2
 
 // delete record
 delete proxy.users[2]

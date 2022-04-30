@@ -5,20 +5,25 @@ import { proxySchema } from '../src/schema-proxy'
 import { filter, find, unProxy } from '../src/extension'
 import { existsSync, unlinkSync } from 'fs'
 
+export type User = {
+  id?: number
+  username: string
+}
+export type Post = {
+  id?: number
+  user_id: number
+  content: string
+  created_at?: string
+  author?: User
+}
+export type Log = {
+  id?: number
+}
+
 export type DBProxy = {
-  user: {
-    id?: number
-    username: string
-  }[]
-  post: {
-    id?: number
-    user_id: number
-    content: string
-    created_at?: string
-  }[]
-  log: {
-    id?: number
-  }[]
+  user: User[]
+  post: Post[]
+  log: Log[]
 }
 
 context('proxyDB TestSuit', () => {
@@ -67,7 +72,13 @@ drop table post;
     })
     proxy = proxySchema<DBProxy>(db, {
       user: ['id', 'username'],
-      post: ['id', 'user_id', 'content', 'created_at'],
+      post: [
+        'id',
+        'user_id',
+        'content',
+        'created_at',
+        ['author', { field: 'user_id', table: 'user' }],
+      ],
       log: ['id'],
     })
   })
@@ -168,5 +179,17 @@ drop table post;
       delete proxy.log[2]
       expect(proxy.log.push({})).to.equals(4)
     })
+  })
+  it('should resolve reference row from foreign key', () => {
+    expect(proxy.post[3].user_id).to.equals(1)
+    expect(proxy.user[1].username).to.equals('Alice')
+    let author = proxy.post[3].author
+    expect(author).not.to.be.undefined
+    expect(author.username).to.equals('Alice')
+  })
+  it('should update foreign key when assign reference row', () => {
+    expect(proxy.post[3].user_id).to.equals(1)
+    proxy.post[3].author = proxy.user[2]
+    expect(proxy.post[3].user_id).to.equals(2)
   })
 })
