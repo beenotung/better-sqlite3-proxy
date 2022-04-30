@@ -16,6 +16,9 @@ export type DBProxy = {
     content: string
     created_at?: string
   }[]
+  log: {
+    id?: number
+  }[]
 }
 
 context('proxyDB TestSuit', () => {
@@ -51,12 +54,21 @@ create table if not exists post (
 -- Down
 drop table post;
 `,
+          /* sql */ `
+-- Up
+create table if not exists log (
+  id integer primary key
+);
+-- Down
+drop table post;
+`,
         ],
       },
     })
     proxy = proxySchema<DBProxy>(db, {
       user: ['id', 'username'],
       post: ['id', 'user_id', 'content', 'created_at'],
+      log: ['id'],
     })
   })
 
@@ -131,5 +143,23 @@ drop table post;
     expect(matches).to.have.lengthOf(2)
     expect(matches[0].id).to.equals(1)
     expect(matches[1].id).to.equals(3)
+  })
+  context('proxy.table.push()', () => {
+    before(() => {
+      proxy.log.length = 0
+    })
+    it('should returns id of last insert row', () => {
+      expect(proxy.log.push({})).to.equals(1)
+    })
+    it('should reuse id of last row', () => {
+      expect(proxy.log.push({})).to.equals(2)
+      delete proxy.log[2]
+      expect(proxy.log.push({})).to.equals(2)
+    })
+    it('should not reuse id of non-last row', () => {
+      expect(proxy.log.push({})).to.equals(3)
+      delete proxy.log[2]
+      expect(proxy.log.push({})).to.equals(4)
+    })
   })
 })

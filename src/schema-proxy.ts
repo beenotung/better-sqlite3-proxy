@@ -33,6 +33,10 @@ export function proxySchema<Dict extends { [table: string]: object[] }>(
 
     let count = db.prepare(/* sql */ `select count(*) from ${table}`).pluck()
 
+    let select_last_id = db
+      .prepare(/* sql */ `select max(id) from ${table}`)
+      .pluck()
+
     let delete_by_id = db.prepare(/* sql */ `delete from ${table} where id = ?`)
     let delete_by_length = db.prepare(
       /* sql */ `delete from ${table} where id > ?`,
@@ -65,11 +69,10 @@ export function proxySchema<Dict extends { [table: string]: object[] }>(
     )
 
     let insert_dict: Record<string, Statement> = {}
-    let insert_run = (row: Record<string, any>) => {
+    let insert_run = (row: Record<string, any>): number => {
       let keys = Object.keys(row)
       if (keys.length === 0) {
-        insert_empty.run()
-        return
+        return insert_empty.run().lastInsertRowid as number
       }
       let key = keys.join('|')
       let insert =
@@ -79,7 +82,7 @@ export function proxySchema<Dict extends { [table: string]: object[] }>(
             key => ':' + key,
           )})`,
         ))
-      insert.run(row)
+      return insert.run(row).lastInsertRowid as number
     }
 
     let count_by_id = db
@@ -95,10 +98,11 @@ export function proxySchema<Dict extends { [table: string]: object[] }>(
     }
 
     function push(): number {
+      let last_id: number = 0
       for (let i = 0; i < arguments.length; i++) {
-        insert_run(arguments[i])
+        last_id = insert_run(arguments[i])
       }
-      return count.get()
+      return last_id || select_last_id.get()
     }
 
     let find_dict: Record<string, Statement> = {}
