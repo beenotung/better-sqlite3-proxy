@@ -187,9 +187,21 @@ drop table post;
     expect(author).not.to.be.undefined
     expect(author.username).to.equals('Alice')
   })
-  it('should update foreign key when assign reference row', () => {
+  it('should update foreign key when assign specific reference row', () => {
     expect(proxy.post[3].user_id).to.equals(1)
     proxy.post[3].author = proxy.user[2]
+    expect(proxy.post[3].user_id).to.equals(2)
+  })
+  it('should update foreign key when updating multiple fields including reference row', () => {
+    proxy.post[3].content = 'old'
+    proxy.post[3].user_id = 1
+    expect(proxy.post[3].content).to.equals('old')
+    expect(proxy.post[3].user_id).to.equals(1)
+    proxy.post[3] = {
+      author: proxy.user[2],
+      content: 'new',
+    } as Partial<Post> as Post
+    expect(proxy.post[3].content).to.equals('new')
     expect(proxy.post[3].user_id).to.equals(2)
   })
 })

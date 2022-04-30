@@ -57,7 +57,18 @@ export function proxySchema<Dict extends { [table: string]: object[] }>(
 
     let update_dict: Record<string, Statement> = {}
     let update_run = (id: number, row: Record<string, any>) => {
-      let keys = Object.keys(row)
+      let params: Record<string, any> = { id }
+      let keys: string[] = []
+      for (let key in row) {
+        if (tableFieldNames.includes(key)) {
+          keys.push(key)
+          params[key] = row[key]
+        } else if (relationFieldNames.includes(key)) {
+          let relationField = relationFieldDict[key]
+          keys.push(relationField.field)
+          params[relationField.field] = row[key].id
+        }
+      }
       if (keys.length == 0) return
       let key = keys.join('|')
       let update =
@@ -67,7 +78,7 @@ export function proxySchema<Dict extends { [table: string]: object[] }>(
             key => `${key} = :${key}`,
           )} where id = :id`,
         ))
-      update.run({ id, ...row })
+      update.run(params)
     }
 
     let update_one_column_dict: Record<string, Statement> = {}
