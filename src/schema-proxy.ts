@@ -64,9 +64,9 @@ export function proxySchema<Dict extends { [table: string]: object[] }>(
           keys.push(key)
           params[key] = row[key]
         } else if (relationFieldNames.includes(key)) {
-          let relationField = relationFieldDict[key]
-          keys.push(relationField.field)
-          params[relationField.field] = row[key].id
+          let field = relationFieldDict[key].field
+          keys.push(field)
+          params[field] = row[key].id
         }
       }
       if (keys.length == 0) return
