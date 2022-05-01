@@ -5,6 +5,11 @@ import { proxySchema } from '../src/schema-proxy'
 import { filter, find, unProxy } from '../src/extension'
 import { existsSync, unlinkSync } from 'fs'
 
+export type DBProxy = {
+  user: User[]
+  post: Post[]
+  log: Log[]
+}
 export type User = {
   id?: number
   username: string
@@ -18,12 +23,6 @@ export type Post = {
 }
 export type Log = {
   id?: number
-}
-
-export type DBProxy = {
-  user: User[]
-  post: Post[]
-  log: Log[]
 }
 
 context('proxyDB TestSuit', () => {
