@@ -29,6 +29,10 @@ drop table post;
   },
 })
 
+type DBProxy = {
+  user: User[]
+  post: Post[]
+}
 type User = {
   id?: number
   username: string
@@ -39,11 +43,6 @@ type Post = {
   content: string
   created_at?: string
   author?: User
-}
-
-type DBProxy = {
-  user: User[]
-  post: Post[]
 }
 
 let proxy = proxySchema<DBProxy>(db, {
