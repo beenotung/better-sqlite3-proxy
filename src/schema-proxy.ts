@@ -337,6 +337,7 @@ export function proxySchema<Dict extends { [table: string]: object[] }>(
           .pluck()
       }
       let sql = select_create_table.get(table)
+      if (!sql) throw new Error(`Table ${table} doest not exist`)
       _tableFields.push(...parseColumnNames(sql))
     }
     table_dict[table] = proxyTable(table, _tableFields, _relationFields)
