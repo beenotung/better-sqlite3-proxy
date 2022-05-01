@@ -36,7 +36,8 @@
   "dependencies": {
     "better-sqlite3": "^7.5.0",
     "better-sqlite3-helper": "^3.1.6",
-    "better-sqlite3-schema": "^2.1.1"
+    "better-sqlite3-schema": "^2.1.1",
+    "quick-erd": "^2.0.1"
   },
   "devDependencies": {
     "@types/better-sqlite3": "^7.4.2",

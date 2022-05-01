@@ -1,6 +1,7 @@
 import { Statement } from 'better-sqlite3'
 import { DBInstance } from 'better-sqlite3-schema'
 import { unProxySymbol, findSymbol, filterSymbol } from './extension'
+import { parseCreateTable } from 'quick-erd/dist/db/sqlite-parser'
 
 export type TableField = string | RelationField
 
@@ -316,6 +317,7 @@ export function proxySchema<Dict extends { [table: string]: object[] }>(
     return proxy
   }
 
+  let select_create_table: Statement | null = null
   let table_dict = {} as Dict
   for (let table in tableFields) {
     let fields = tableFields[table]
@@ -328,7 +330,25 @@ export function proxySchema<Dict extends { [table: string]: object[] }>(
         _relationFields.push(field)
       }
     }
+    if (_tableFields.length == 0) {
+      if (!select_create_table) {
+        select_create_table = db
+          .prepare(/* sql */ `select sql from sqlite_master where name = ?`)
+          .pluck()
+      }
+      let sql = select_create_table.get(table)
+      _tableFields.push(...parseColumnNames(sql))
+    }
     table_dict[table] = proxyTable(table, _tableFields, _relationFields)
   }
   return table_dict
+}
+
+export function parseColumnNames(sql: string): string[] {
+  let fields = parseCreateTable(sql)
+  if (!fields) {
+    console.error('failed to parse columns, please specify explicitly')
+    return []
+  }
+  return fields.map(field => field.name)
 }

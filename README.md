@@ -92,13 +92,9 @@ type DBProxy = {
 }
 
 let proxy = proxySchema<DBProxy>(db, {
-  user: ['id', 'username'],
+  user: ['id', 'username'], // specify columns explicitly or leave it empty to auto-scan from create-table schema
   post: [
-    'id',
-    'user_id',
-    'content',
-    'created_at',
-    ['author', { field: 'user_id', table: 'user' }],
+    ['author', { field: 'user_id', table: 'user' }], // link up reference fields
   ],
 })
 

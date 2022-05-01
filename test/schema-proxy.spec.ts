@@ -70,15 +70,9 @@ drop table post;
       },
     })
     proxy = proxySchema<DBProxy>(db, {
-      user: ['id', 'username'],
-      post: [
-        'id',
-        'user_id',
-        'content',
-        'created_at',
-        ['author', { field: 'user_id', table: 'user' }],
-      ],
-      log: ['id'],
+      user: [],
+      post: [['author', { field: 'user_id', table: 'user' }]],
+      log: [],
     })
   })
 
