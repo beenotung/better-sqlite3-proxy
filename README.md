@@ -3,8 +3,6 @@
 Efficiently proxy sqlite tables and access data as typical array of objects.
 
 [![npm Package Version](https://img.shields.io/npm/v/better-sqlite3-proxy)](https://www.npmjs.com/package/better-sqlite3-proxy)
-[![npm Package Version](https://img.shields.io/bundlephobia/min/better-sqlite3-proxy)](https://bundlephobia.com/package/better-sqlite3-proxy)
-[![npm Package Version](https://img.shields.io/bundlephobia/minzip/better-sqlite3-proxy)](https://bundlephobia.com/package/better-sqlite3-proxy)
 
 ## Features
 
