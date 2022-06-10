@@ -143,7 +143,9 @@ export function proxySchema<Dict extends { [table: string]: object[] }>(
     let update_one_column_dict: Record<string, Statement> = {}
     for (let field of tableFieldNames) {
       update_one_column_dict[field] = db.prepare(
-        auto_update_timestamp && field !== 'updated_at'
+        auto_update_timestamp &&
+          field !== 'updated_at' &&
+          tableFieldNames.includes('updated_at')
           ? /* sql */ `update ${table} set ${field} = :${field}, updated_at = current_timestamp where id = :id`
           : /* sql */ `update ${table} set ${field} = :${field} where id = :id`,
       )
