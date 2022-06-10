@@ -10,10 +10,36 @@ export type RelationField = [
   references: { field: string; table: string },
 ]
 
+export type ProxySchemaOptions<Dict extends { [table: string]: object[] }> = {
+  db: DBInstance
+  tableFields: Record<keyof Dict, TableField[]>
+  auto_update_timestamp?: boolean // default: true
+}
+
 export function proxySchema<Dict extends { [table: string]: object[] }>(
   db: DBInstance,
   tableFields: Record<keyof Dict, TableField[]>,
+): Dict
+export function proxySchema<Dict extends { [table: string]: object[] }>(
+  options: ProxySchemaOptions<Dict>,
+): Dict
+export function proxySchema<Dict extends { [table: string]: object[] }>(
+  db_or_options: DBInstance | ProxySchemaOptions<Dict>,
+  tableFields?: Record<keyof Dict, TableField[]>,
 ): Dict {
+  let options: ProxySchemaOptions<Dict>
+  if (tableFields) {
+    options = {
+      db: db_or_options as DBInstance,
+      tableFields,
+    }
+  } else {
+    options = db_or_options as ProxySchemaOptions<Dict>
+  }
+  let db = options.db
+  tableFields = options.tableFields
+  let auto_update_timestamp = options.auto_update_timestamp !== false
+
   type TableName = keyof Dict
   type Row<Name extends TableName> = Dict[Name][number]
   let tableProxyMap = new Map<string, Dict[TableName]>()
@@ -57,7 +83,10 @@ export function proxySchema<Dict extends { [table: string]: object[] }>(
     )
 
     let update_dict: Record<string, Statement> = {}
-    let update_run = (id: number, row: Record<string, any>) => {
+    let update_run_without_updated_at = (
+      id: number,
+      row: Record<string, any>,
+    ) => {
       let params: Record<string, any> = { id }
       let keys: string[] = []
       for (let key in row) {
@@ -81,11 +110,42 @@ export function proxySchema<Dict extends { [table: string]: object[] }>(
         ))
       update.run(params)
     }
+    let update_run_with_updated_at = (id: number, row: Record<string, any>) => {
+      let params: Record<string, any> = { id }
+      let keys: string[] = []
+      for (let key in row) {
+        if (key === 'updated_at') continue
+        if (tableFieldNames.includes(key)) {
+          keys.push(key)
+          params[key] = row[key]
+        } else if (relationFieldNames.includes(key)) {
+          let field = relationFieldDict[key].field
+          keys.push(field)
+          params[field] = row[key].id
+        }
+      }
+      if (keys.length == 0) return
+      let key = keys.join('|')
+      let update =
+        update_dict[key] ||
+        (update_dict[key] = db.prepare(
+          /* sql */ `update ${table} set ${keys.map(
+            key => `${key} = :${key}`,
+          )}, updated_at = current_timestamp where id = :id`,
+        ))
+      update.run(params)
+    }
+    let update_run =
+      auto_update_timestamp && tableFieldNames.includes('updated_at')
+        ? update_run_with_updated_at
+        : update_run_without_updated_at
 
     let update_one_column_dict: Record<string, Statement> = {}
     for (let field of tableFieldNames) {
       update_one_column_dict[field] = db.prepare(
-        /* sql */ `update ${table} set ${field} = :${field} where id = :id`,
+        auto_update_timestamp && field !== 'updated_at'
+          ? /* sql */ `update ${table} set ${field} = :${field}, updated_at = current_timestamp where id = :id`
+          : /* sql */ `update ${table} set ${field} = :${field} where id = :id`,
       )
     }
 
