@@ -63,23 +63,25 @@ export function proxySchema<Dict extends { [table: string]: object[] }>(
     let select_one_column_dict: Record<string, Statement> = {}
     for (let field of tableFieldNames) {
       select_one_column_dict[field] = db
-        .prepare(/* sql */ `select ${field} from ${table} where id = ?`)
+        .prepare(/* sql */ `select "${field}" from "${table}" where id = ?`)
         .pluck()
     }
     let select_all_column_by_id = db.prepare(
-      /* sql */ `select * from ${table} where id = ? limit 1`,
+      /* sql */ `select * from "${table}" where id = ? limit 1`,
     )
-    let select_all = db.prepare(/* sql */ `select * from ${table}`)
+    let select_all = db.prepare(/* sql */ `select * from "${table}"`)
 
-    let count = db.prepare(/* sql */ `select count(*) from ${table}`).pluck()
+    let count = db.prepare(/* sql */ `select count(*) from "${table}"`).pluck()
 
     let select_last_id = db
-      .prepare(/* sql */ `select max(id) from ${table}`)
+      .prepare(/* sql */ `select max(id) from "${table}"`)
       .pluck()
 
-    let delete_by_id = db.prepare(/* sql */ `delete from ${table} where id = ?`)
+    let delete_by_id = db.prepare(
+      /* sql */ `delete from "${table}" where id = ?`,
+    )
     let delete_by_length = db.prepare(
-      /* sql */ `delete from ${table} where id > ?`,
+      /* sql */ `delete from "${table}" where id > ?`,
     )
 
     let update_dict: Record<string, Statement> = {}
@@ -104,8 +106,8 @@ export function proxySchema<Dict extends { [table: string]: object[] }>(
       let update =
         update_dict[key] ||
         (update_dict[key] = db.prepare(
-          /* sql */ `update ${table} set ${keys.map(
-            key => `${key} = :${key}`,
+          /* sql */ `update "${table}" set ${keys.map(
+            key => `"${key}" = :${key}`,
           )} where id = :id`,
         ))
       update.run(params)
@@ -129,8 +131,8 @@ export function proxySchema<Dict extends { [table: string]: object[] }>(
       let update =
         update_dict[key] ||
         (update_dict[key] = db.prepare(
-          /* sql */ `update ${table} set ${keys.map(
-            key => `${key} = :${key}`,
+          /* sql */ `update "${table}" set ${keys.map(
+            key => `"${key}" = :${key}`,
           )}, updated_at = current_timestamp where id = :id`,
         ))
       update.run(params)
@@ -146,13 +148,13 @@ export function proxySchema<Dict extends { [table: string]: object[] }>(
         auto_update_timestamp &&
           field !== 'updated_at' &&
           tableFieldNames.includes('updated_at')
-          ? /* sql */ `update ${table} set ${field} = :${field}, updated_at = current_timestamp where id = :id`
-          : /* sql */ `update ${table} set ${field} = :${field} where id = :id`,
+          ? /* sql */ `update "${table}" set "${field}" = :${field}, updated_at = current_timestamp where id = :id`
+          : /* sql */ `update "${table}" set "${field}" = :${field} where id = :id`,
       )
     }
 
     let insert_empty = db.prepare(
-      /* sql */ `insert into ${table} (id) values (null)`,
+      /* sql */ `insert into "${table}" (id) values (null)`,
     )
 
     let insert_dict: Record<string, Statement> = {}
@@ -176,7 +178,7 @@ export function proxySchema<Dict extends { [table: string]: object[] }>(
       let insert =
         insert_dict[key] ||
         (insert_dict[key] = db.prepare(
-          /* sql */ `insert into ${table} (${keys}) values (${keys.map(
+          /* sql */ `insert into "${table}" (${keys}) values (${keys.map(
             key => ':' + key,
           )})`,
         ))
@@ -184,10 +186,10 @@ export function proxySchema<Dict extends { [table: string]: object[] }>(
     }
 
     let count_by_id = db
-      .prepare(/* sql */ `select count(*) from ${table} where id = ? limit 1`)
+      .prepare(/* sql */ `select count(*) from "${table}" where id = ? limit 1`)
       .pluck()
 
-    let select_id = db.prepare(/* sql */ `select id from ${table}`).pluck()
+    let select_id = db.prepare(/* sql */ `select id from "${table}"`).pluck()
 
     function* iterator() {
       for (let id of select_id.all()) {
@@ -214,8 +216,8 @@ export function proxySchema<Dict extends { [table: string]: object[] }>(
         find_dict[key] ||
         (find_dict[key] = db
           .prepare(
-            /* sql */ `select id from ${table} where ${keys
-              .map(key => `${key} = :${key}`)
+            /* sql */ `select id from "${table}" where ${keys
+              .map(key => `"${key}" = :${key}`)
               .join(' and ')} limit 1`,
           )
           .pluck())
@@ -234,8 +236,8 @@ export function proxySchema<Dict extends { [table: string]: object[] }>(
         filter_dict[key] ||
         (filter_dict[key] = db
           .prepare(
-            /* sql */ `select id from ${table} where ${keys
-              .map(key => `${key} = :${key}`)
+            /* sql */ `select id from "${table}" where ${keys
+              .map(key => `"${key}" = :${key}`)
               .join(' and ')}`,
           )
           .pluck())
@@ -399,7 +401,7 @@ export function proxySchema<Dict extends { [table: string]: object[] }>(
           .pluck()
       }
       let sql = select_create_table.get(table)
-      if (!sql) throw new Error(`Table ${table} doest not exist`)
+      if (!sql) throw new Error(`Table "${table}" doest not exist`)
       _tableFields.push(...parseColumnNames(sql))
     }
     table_dict[table] = proxyTable(table, _tableFields, _relationFields)

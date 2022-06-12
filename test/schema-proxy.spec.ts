@@ -9,6 +9,7 @@ export type DBProxy = {
   user: User[]
   post: Post[]
   log: Log[]
+  order: Order[]
 }
 export type User = {
   id?: number
@@ -23,6 +24,11 @@ export type Post = {
 }
 export type Log = {
   id?: number
+}
+export type Order = {
+  id?: number
+  user_id: number
+  user?: User
 }
 
 context('proxyDB TestSuit', () => {
@@ -66,6 +72,15 @@ create table if not exists log (
 -- Down
 drop table post;
 `,
+          /* sql */ `
+-- Up
+create table if not exists "order" (
+  id integer primary key
+, user_id integer not null references user (id)
+);
+-- Down
+drop table "order";
+`,
         ],
       },
     })
@@ -73,6 +88,7 @@ drop table post;
       user: [],
       post: [['author', { field: 'user_id', table: 'user' }]],
       log: [],
+      order: [['user', { field: 'user_id', table: 'user' }]],
     })
   })
 
