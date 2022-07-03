@@ -28,6 +28,7 @@
     "dist"
   ],
   "scripts": {
+    "format": "prettier --write .",
     "build": "rimraf dist && tsc -p .",
     "mocha": "ts-mocha test/*.spec.ts",
     "type-check": "tsc -p . --noEmit",
