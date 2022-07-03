@@ -4,6 +4,7 @@ import { join } from 'path'
 import { proxySchema } from '../src/schema-proxy'
 import { filter, find, unProxy } from '../src/extension'
 import { existsSync, unlinkSync } from 'fs'
+import { fake } from 'sinon'
 
 export type DBProxy = {
   user: User[]
@@ -24,6 +25,7 @@ export type Post = {
 }
 export type Log = {
   id?: number
+  remark?: string
 }
 export type Order = {
   id?: number
@@ -68,6 +70,7 @@ drop table post;
 -- Up
 create table if not exists log (
   id integer primary key
+, remark text
 );
 -- Down
 drop table post;
@@ -171,22 +174,44 @@ drop table "order";
     expect(matches[0].id).to.equals(1)
     expect(matches[1].id).to.equals(3)
   })
-  context('proxy.table.push()', () => {
-    before(() => {
-      proxy.log.length = 0
+  context.only('proxy array methods', () => {
+    context('proxy.table.push()', () => {
+      before(() => {
+        proxy.log.length = 0
+      })
+      it('should returns id of last insert row', () => {
+        expect(proxy.log.push({})).to.equals(1)
+      })
+      it('should reuse id of last row', () => {
+        expect(proxy.log.push({})).to.equals(2)
+        delete proxy.log[2]
+        expect(proxy.log.push({})).to.equals(2)
+      })
+      it('should not reuse id of non-last row', () => {
+        expect(proxy.log.push({})).to.equals(3)
+        delete proxy.log[2]
+        expect(proxy.log.push({})).to.equals(4)
+      })
     })
-    it('should returns id of last insert row', () => {
-      expect(proxy.log.push({})).to.equals(1)
-    })
-    it('should reuse id of last row', () => {
-      expect(proxy.log.push({})).to.equals(2)
-      delete proxy.log[2]
-      expect(proxy.log.push({})).to.equals(2)
-    })
-    it('should not reuse id of non-last row', () => {
-      expect(proxy.log.push({})).to.equals(3)
-      delete proxy.log[2]
-      expect(proxy.log.push({})).to.equals(4)
+    context('populated tests', () => {
+      beforeEach(() => {
+        proxy.log.length = 0
+        proxy.log[1] = { remark: 'first' }
+        proxy.log[3] = { remark: 'third' }
+      })
+      it('should access each row from proxy.table.forEach()', () => {
+        let forEach = fake()
+        proxy.log.forEach(forEach)
+        expect(forEach.callCount).to.equals(2)
+        expect(forEach.args).to.deep.equals([
+          [{}, 1, proxy.log],
+          [{}, 3, proxy.log],
+        ])
+      })
+      it('should access each row from proxy.table.map()', () => {
+        let result = proxy.log.map(row => row.remark)
+        expect(result).to.deep.equals(['first', 'third'])
+      })
     })
   })
   it('should resolve reference row from foreign key', () => {

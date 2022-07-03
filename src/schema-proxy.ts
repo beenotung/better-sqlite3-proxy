@@ -192,14 +192,46 @@ export function proxySchema<Dict extends { [table: string]: object[] }>(
     let select_id = db.prepare(/* sql */ `select id from "${table}"`).pluck()
 
     function* iterator() {
-      for (let id of select_id.all()) {
-        yield proxyRow(id)
+      const ids = select_all.all()
+      const n = ids.length
+      let i: number
+      for (i = 0; i < n; i++) {
+        yield proxyRow(ids[i])
       }
+    }
+
+    function forEach(
+      callbackfn: (value: Row<Name>, index: number, array: Row<Name>[]) => void,
+    ): void {
+      const ids = select_id.all()
+      const n = ids.length
+      let i: number
+      let id: number
+      for (i = 0; i < n; i++) {
+        id = ids[i]
+        callbackfn(proxyRow(id), id, proxy)
+      }
+    }
+
+    function map<U>(
+      callbackfn: (value: Row<Name>, index: number, array: Row<Name>[]) => U,
+    ): U[] {
+      const ids = select_id.all()
+      const n = ids.length
+      const results: U[] = new Array(n)
+      let i: number
+      let id: number
+      for (i = 0; i < n; i++) {
+        id = ids[i]
+        results[i] = callbackfn(proxyRow(id), id, proxy)
+      }
+      return results
     }
 
     function push(): number {
       let last_id: number = 0
-      for (let i = 0; i < arguments.length; i++) {
+      let i: number
+      for (i = 0; i < arguments.length; i++) {
         last_id = insert_run(arguments[i])
       }
       return last_id || select_last_id.get()
@@ -312,6 +344,8 @@ export function proxySchema<Dict extends { [table: string]: object[] }>(
           case Symbol.iterator:
           case 'length':
           case 'push':
+          case 'forEach':
+          case 'map':
             return true
         }
         if (typeof p !== 'symbol') {
@@ -352,6 +386,10 @@ export function proxySchema<Dict extends { [table: string]: object[] }>(
             return iterator
           case 'length':
             return count.get()
+          case 'forEach':
+            return forEach
+          case 'map':
+            return map
           case 'push':
             return push
         }
