@@ -178,9 +178,9 @@ export function proxySchema<Dict extends { [table: string]: object[] }>(
       let insert =
         insert_dict[key] ||
         (insert_dict[key] = db.prepare(
-          /* sql */ `insert into "${table}" (${keys}) values (${keys.map(
-            key => ':' + key,
-          )})`,
+          /* sql */ `insert into "${table}" (${keys.map(
+            key => '"' + key + '"',
+          )}) values (${keys.map(key => ':' + key)})`,
         ))
       return insert.run(params).lastInsertRowid as number
     }
