@@ -94,7 +94,7 @@ export function proxySchema<Dict extends { [table: string]: object[] }>(
       for (let key in row) {
         if (tableFieldNames.includes(key)) {
           keys.push(key)
-          params[key] = row[key]
+          params[key] = toSqliteValue(row[key])
         } else if (relationFieldNames.includes(key)) {
           let field = relationFieldDict[key].field
           keys.push(field)
@@ -119,7 +119,7 @@ export function proxySchema<Dict extends { [table: string]: object[] }>(
         if (key === 'updated_at') continue
         if (tableFieldNames.includes(key)) {
           keys.push(key)
-          params[key] = row[key]
+          params[key] = toSqliteValue(row[key])
         } else if (relationFieldNames.includes(key)) {
           let field = relationFieldDict[key].field
           keys.push(field)
@@ -164,7 +164,7 @@ export function proxySchema<Dict extends { [table: string]: object[] }>(
       for (let key in row) {
         if (tableFieldNames.includes(key)) {
           keys.push(key)
-          params[key] = row[key]
+          params[key] = toSqliteValue(row[key])
         } else if (relationFieldNames.includes(key)) {
           let field = relationFieldDict[key].field
           keys.push(field)
@@ -244,7 +244,19 @@ export function proxySchema<Dict extends { [table: string]: object[] }>(
         throw new Error('find() expects non-empty filter')
       }
       let key = keys
-        .map(key => (filter[key] === null ? `${key}(null)` : key))
+        .map(key => {
+          switch (filter[key] as unknown) {
+            case null:
+              return `${key}(null)`
+            case true:
+              filter[key] = 1 as any
+              break
+            case false:
+              filter[key] = 0 as any
+              break
+          }
+          return key
+        })
         .join('|')
       let select =
         find_dict[key] ||
@@ -270,7 +282,19 @@ export function proxySchema<Dict extends { [table: string]: object[] }>(
         throw new Error('filter() expects non-empty filter')
       }
       let key = keys
-        .map(key => (filter[key] === null ? `${key}(null)` : key))
+        .map(key => {
+          switch (filter[key] as unknown) {
+            case null:
+              return `${key}(null)`
+            case true:
+              filter[key] = 1 as any
+              break
+            case false:
+              filter[key] = 0 as any
+              break
+          }
+          return key
+        })
         .join('|')
       let select =
         filter_dict[key] ||
@@ -309,7 +333,7 @@ export function proxySchema<Dict extends { [table: string]: object[] }>(
           }
           if (typeof p === 'string') {
             if (tableFieldNames.includes(p)) {
-              update_one_column_dict[p].run({ id, [p]: value })
+              update_one_column_dict[p].run({ id, [p]: toSqliteValue(value) })
               return true
             }
             if (relationFieldNames.includes(p)) {
@@ -466,4 +490,15 @@ export function parseColumnNames(sql: string): string[] {
     return []
   }
   return fields.map(field => field.name)
+}
+
+function toSqliteValue(value: unknown) {
+  switch (value) {
+    case true:
+      return 1
+    case false:
+      return 0
+    default:
+      return value
+  }
 }

@@ -15,6 +15,7 @@ export type DBProxy = {
 export type User = {
   id?: number
   username: string
+  is_admin?: boolean | null
 }
 export type Post = {
   id?: number
@@ -52,6 +53,7 @@ context('proxyDB TestSuit', () => {
 create table if not exists user (
   id integer primary key
 , username text not null unique
+, is_admin boolean
 );
 -- Down
 drop table user;
@@ -108,17 +110,26 @@ drop table "order";
     expect(proxy.user.length).to.equals(1)
   })
   it('should select row by id', () => {
-    expect(unProxy(proxy.user[1])).to.deep.equals({ id: 1, username: 'Alice' })
+    expect(unProxy(proxy.user[1])).to.deep.equals({
+      id: 1,
+      username: 'Alice',
+      is_admin: null,
+    })
   })
   it('should insert row by array index', () => {
     proxy.user[2] = { username: 'Bob' }
-    expect(unProxy(proxy.user[2])).to.deep.equals({ id: 2, username: 'Bob' })
+    expect(unProxy(proxy.user[2])).to.deep.equals({
+      id: 2,
+      username: 'Bob',
+      is_admin: null,
+    })
   })
   it('should update a specific column', () => {
     proxy.user[2].username = 'Charlie'
     expect(unProxy(proxy.user[2])).to.deep.equals({
       id: 2,
       username: 'Charlie',
+      is_admin: null,
     })
   })
   it('should update multiple columns', () => {
@@ -132,14 +143,33 @@ drop table "order";
   })
   it('should select all rows', () => {
     expect(unProxy(proxy.user)).to.deep.equals([
-      { id: 1, username: 'Alice' },
-      { id: 2, username: 'Charlie' },
+      { id: 1, username: 'Alice', is_admin: null },
+      { id: 2, username: 'Charlie', is_admin: null },
     ])
   })
   it('should delete row by id', () => {
     expect(proxy.user.length).to.equals(2)
     delete proxy.user[2]
     expect(proxy.user.length).to.equals(1)
+  })
+  it('should auto convert boolean values into 1/0', () => {
+    function test(options: { input: boolean | null; output: 1 | 0 | null }) {
+      let id = proxy.user.push({
+        username: 'admin?' + options.input,
+        is_admin: options.input,
+      })
+      expect(proxy.user[id].is_admin).to.equals(options.output)
+      expect(find(proxy.user, { id, is_admin: options.input })?.id).to.equals(
+        id,
+      )
+      expect(
+        filter(proxy.user, { id, is_admin: options.input }),
+      ).to.have.lengthOf(1)
+    }
+
+    test({ input: null, output: null })
+    test({ input: true, output: 1 })
+    test({ input: false, output: 0 })
   })
   it('should truncate table', () => {
     expect(proxy.user.length).not.equals(0)
@@ -155,10 +185,12 @@ drop table "order";
     expect(unProxy(find(proxy.user, { username: 'Alice' }))).to.deep.equals({
       id: 1,
       username: 'Alice',
+      is_admin: null,
     })
     expect(unProxy(find(proxy.user, { username: 'Bob' }))).to.deep.equals({
       id: 2,
       username: 'Bob',
+      is_admin: null,
     })
   })
   it('should find record by multiple columns', () => {
