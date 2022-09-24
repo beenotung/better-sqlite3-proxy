@@ -239,17 +239,23 @@ export function proxySchema<Dict extends { [table: string]: object[] }>(
 
     let find_dict: Record<string, Statement> = {}
     function find(filter: Partial<Row<Name>>): Row<Name> | undefined {
-      let keys = Object.keys(filter)
+      let keys = Object.keys(filter) as Array<keyof typeof filter>
       if (keys.length === 0) {
         throw new Error('find() expects non-empty filter')
       }
-      let key = keys.join('|')
+      let key = keys
+        .map(key => (filter[key] === null ? `${key}(null)` : key))
+        .join('|')
       let select =
         find_dict[key] ||
         (find_dict[key] = db
           .prepare(
             /* sql */ `select id from "${table}" where ${keys
-              .map(key => `"${key}" = :${key}`)
+              .map(key =>
+                filter[key] === null
+                  ? `"${key}" is null`
+                  : `"${key}" = :${key}`,
+              )
               .join(' and ')} limit 1`,
           )
           .pluck())
@@ -259,17 +265,23 @@ export function proxySchema<Dict extends { [table: string]: object[] }>(
 
     let filter_dict: Record<string, Statement> = {}
     function filter(filter: Partial<Row<Name>>): Array<Row<Name>> {
-      let keys = Object.keys(filter)
+      let keys = Object.keys(filter) as Array<keyof typeof filter>
       if (keys.length === 0) {
         throw new Error('filter() expects non-empty filter')
       }
-      let key = keys.join('|')
+      let key = keys
+        .map(key => (filter[key] === null ? `${key}(null)` : key))
+        .join('|')
       let select =
         filter_dict[key] ||
         (filter_dict[key] = db
           .prepare(
             /* sql */ `select id from "${table}" where ${keys
-              .map(key => `"${key}" = :${key}`)
+              .map(key =>
+                filter[key] === null
+                  ? `"${key}" is null`
+                  : `"${key}" = :${key}`,
+              )
               .join(' and ')}`,
           )
           .pluck())

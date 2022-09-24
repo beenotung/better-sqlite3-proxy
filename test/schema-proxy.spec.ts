@@ -22,6 +22,7 @@ export type Post = {
   content: string
   created_at?: string
   author?: User
+  delete_time?: string
 }
 export type Log = {
   id?: number
@@ -62,6 +63,7 @@ create table if not exists post (
 , user_id integer not null references user (id)
 , content text not null
 , created_at timestamp not null default current_timestamp
+, delete_time timestamp
 );
 -- Down
 drop table post;
@@ -173,6 +175,16 @@ drop table "order";
     expect(matches).to.have.lengthOf(2)
     expect(matches[0].id).to.equals(1)
     expect(matches[1].id).to.equals(3)
+  })
+  it('should filter nullable columns', () => {
+    expect(proxy.post).to.have.lengthOf(3)
+    proxy.post[2].delete_time = 'mock-time'
+    let matches = filter(proxy.post, { delete_time: null })
+    expect(matches).to.have.lengthOf(2)
+  })
+  it('should find nullable columns', () => {
+    let match = find(proxy.post, { delete_time: null })
+    expect(match).not.undefined
   })
   context('proxy array methods', () => {
     context('proxy.table.push()', () => {
