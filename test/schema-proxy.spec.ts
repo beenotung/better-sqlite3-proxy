@@ -174,7 +174,7 @@ drop table "order";
     expect(matches[0].id).to.equals(1)
     expect(matches[1].id).to.equals(3)
   })
-  context.only('proxy array methods', () => {
+  context('proxy array methods', () => {
     context('proxy.table.push()', () => {
       before(() => {
         proxy.log.length = 0
