@@ -23,7 +23,7 @@ export type Post = {
   content: string
   created_at?: string
   author?: User
-  delete_time?: string
+  delete_time?: string | Date
 }
 export type Log = {
   id?: number
@@ -289,5 +289,35 @@ drop table "order";
     } as Partial<Post> as Post)
     expect(proxy.post[id].content).to.equals('with author')
     expect(proxy.post[id].user_id).to.equals(2)
+  })
+  context('convert Date instance to GMT timestamp', () => {
+    let date = new Date('2022-09-25T09:25:12+08:00')
+    let timestamp = '2022-09-25 01:25:12'
+    let user_id = 1
+    let content = 'mock-content'
+    let post_id: number
+    before(() => {
+      proxy.user[1] = { username: 'alice' }
+    })
+    it('should convert when insert', () => {
+      post_id = proxy.post.push({ user_id, content, delete_time: date })
+      expect(proxy.post[post_id].delete_time).to.equals(timestamp)
+    })
+    it('should convert when update', () => {
+      proxy.post[post_id].delete_time = null
+      expect(proxy.post[post_id].delete_time).to.be.null
+      proxy.post[post_id].delete_time = date
+      expect(proxy.post[post_id].delete_time).to.equals(timestamp)
+    })
+    it('should convert when find', () => {
+      let match = find(proxy.post, { id: post_id, delete_time: date })
+      expect(match).not.undefined
+      expect(match.id).to.equals(post_id)
+    })
+    it('should convert when filter', () => {
+      let matches = filter(proxy.post, { id: post_id, delete_time: date })
+      expect(matches).to.have.lengthOf(1)
+      expect(matches[0].id).to.equals(post_id)
+    })
   })
 })

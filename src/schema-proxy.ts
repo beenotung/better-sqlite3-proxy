@@ -2,6 +2,7 @@ import { Statement } from 'better-sqlite3'
 import { DBInstance } from 'better-sqlite3-schema'
 import { unProxySymbol, findSymbol, filterSymbol } from './extension'
 import { parseCreateTable } from 'quick-erd/dist/db/sqlite-parser'
+import { toSqliteTimestamp } from './helpers'
 
 export type TableField = string | RelationField
 
@@ -245,7 +246,8 @@ export function proxySchema<Dict extends { [table: string]: object[] }>(
       }
       let key = keys
         .map(key => {
-          switch (filter[key] as unknown) {
+          const value = filter[key] as unknown
+          switch (value) {
             case null:
               return `${key}(null)`
             case true:
@@ -253,6 +255,10 @@ export function proxySchema<Dict extends { [table: string]: object[] }>(
               break
             case false:
               filter[key] = 0 as any
+              break
+            default:
+              if (value instanceof Date)
+                filter[key] = toSqliteTimestamp(value) as any
               break
           }
           return key
@@ -283,7 +289,8 @@ export function proxySchema<Dict extends { [table: string]: object[] }>(
       }
       let key = keys
         .map(key => {
-          switch (filter[key] as unknown) {
+          const value = filter[key] as unknown
+          switch (value) {
             case null:
               return `${key}(null)`
             case true:
@@ -291,6 +298,10 @@ export function proxySchema<Dict extends { [table: string]: object[] }>(
               break
             case false:
               filter[key] = 0 as any
+              break
+            default:
+              if (value instanceof Date)
+                filter[key] = toSqliteTimestamp(value) as any
               break
           }
           return key
@@ -499,6 +510,7 @@ function toSqliteValue(value: unknown) {
     case false:
       return 0
     default:
+      if (value instanceof Date) return toSqliteTimestamp(value)
       return value
   }
 }
