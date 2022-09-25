@@ -240,7 +240,7 @@ export function proxySchema<Dict extends { [table: string]: object[] }>(
 
     let find_dict: Record<string, Statement> = {}
     function find(filter: Partial<Row<Name>>): Row<Name> | undefined {
-      let keys = Object.keys(filter) as Array<keyof typeof filter>
+      let keys = Object.keys(filter) as Array<string & keyof typeof filter>
       if (keys.length === 0) {
         throw new Error('find() expects non-empty filter')
       }
@@ -283,7 +283,7 @@ export function proxySchema<Dict extends { [table: string]: object[] }>(
 
     let filter_dict: Record<string, Statement> = {}
     function filter(filter: Partial<Row<Name>>): Array<Row<Name>> {
-      let keys = Object.keys(filter) as Array<keyof typeof filter>
+      let keys = Object.keys(filter) as Array<string & keyof typeof filter>
       if (keys.length === 0) {
         throw new Error('filter() expects non-empty filter')
       }
