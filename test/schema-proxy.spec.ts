@@ -256,6 +256,23 @@ drop table "order";
         let result = proxy.log.map(row => row.remark)
         expect(result).to.deep.equals(['first', 'third'])
       })
+      it('should access via for-loop', () => {
+        let each = fake()
+        for (let row of proxy.log) {
+          expect(typeof row).to.equals('object')
+          expect(typeof row.id).to.equals('number')
+          expect(typeof row.remark).to.equals('string')
+          each({
+            id: row.id,
+            remark: row.remark,
+          })
+        }
+        expect(each.callCount).to.equals(2)
+        expect(each.args).to.deep.equals([
+          [{ id: 1, remark: 'first' }],
+          [{ id: 3, remark: 'third' }],
+        ])
+      })
     })
   })
   it('should resolve reference row from foreign key', () => {

@@ -193,7 +193,7 @@ export function proxySchema<Dict extends { [table: string]: object[] }>(
     let select_id = db.prepare(/* sql */ `select id from "${table}"`).pluck()
 
     function* iterator() {
-      const ids = select_all.all()
+      const ids = select_id.all()
       const n = ids.length
       let i: number
       for (i = 0; i < n; i++) {
