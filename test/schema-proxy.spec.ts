@@ -237,13 +237,13 @@ drop table "order";
         expect(proxy.log.push({})).to.equals(4)
       })
     })
-    context('populated tests', () => {
+    context('access each populated row', () => {
       beforeEach(() => {
         proxy.log.length = 0
         proxy.log[1] = { remark: 'first' }
         proxy.log[3] = { remark: 'third' }
       })
-      it('should access each row from proxy.table.forEach()', () => {
+      it('should access via .forEach() method', () => {
         let forEach = fake()
         proxy.log.forEach(forEach)
         expect(forEach.callCount).to.equals(2)
@@ -252,7 +252,7 @@ drop table "order";
           [{}, 3, proxy.log],
         ])
       })
-      it('should access each row from proxy.table.map()', () => {
+      it('should access via .map() method', () => {
         let result = proxy.log.map(row => row.remark)
         expect(result).to.deep.equals(['first', 'third'])
       })
