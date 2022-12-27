@@ -285,10 +285,11 @@ drop table "order";
             remark: row.remark,
           })
         }
-        expect(each.callCount).to.equals(2)
+        expect(each.callCount).to.equals(3)
         expect(each.args).to.deep.equals([
           [{ id: 1, remark: 'first' }],
           [{ id: 3, remark: 'third' }],
+          [{ id: 10, remark: 'ten' }],
         ])
       })
     })
