@@ -258,7 +258,7 @@ drop table "order";
         let result = proxy.log.map(row => row.remark)
         expect(result).to.deep.equals(['first', 'third', 'ten'])
       })
-      it('should access each row from proxy.table.filter()', () => {
+      it('should access via .filter() method', () => {
         let result = proxy.log.filter(row => row.remark.startsWith('t'))
         expect(result).to.have.lengthOf(2)
 
@@ -268,7 +268,7 @@ drop table "order";
         expect(result[1].id).to.equals(10)
         expect(result[1].remark).to.equals('ten')
       })
-      it('should access each row from proxy.table.slice()', () => {
+      it('should access via .slice() method', () => {
         let result = proxy.log.slice(2, 10)
         expect(result).to.have.lengthOf(1)
         expect(result[0].id).to.equals(3)
