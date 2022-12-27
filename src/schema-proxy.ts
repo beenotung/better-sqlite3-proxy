@@ -217,14 +217,61 @@ export function proxySchema<Dict extends { [table: string]: object[] }>(
     function map<U>(
       callbackfn: (value: Row<Name>, index: number, array: Row<Name>[]) => U,
     ): U[] {
+      const results = select_id.all()
+      const n = results.length
+      let i: number
+      let id: number
+      for (i = 0; i < n; i++) {
+        id = results[i]
+        results[i] = callbackfn(proxyRow(id), id, proxy)
+      }
+      return results
+    }
+
+    function arrayFilter(
+      callbackfn: (
+        value: Row<Name>,
+        index: number,
+        array: Row<Name>[],
+      ) => boolean,
+    ): Row<Name>[] {
       const ids = select_id.all()
       const n = ids.length
-      const results: U[] = new Array(n)
+      const results: Row<Name>[] = []
       let i: number
       let id: number
       for (i = 0; i < n; i++) {
         id = ids[i]
-        results[i] = callbackfn(proxyRow(id), id, proxy)
+        let row = proxyRow(id)
+        if (callbackfn(row, id, proxy)) {
+          results.push(row)
+        }
+      }
+      return results
+    }
+
+    let slice_1 = db
+      .prepare(/* sql */ `select id from "${table}" where id > :start`)
+      .pluck()
+    let slice_2 = db
+      .prepare(
+        /* sql */ `select id from "${table}" where id > :start and id < :end`,
+      )
+      .pluck()
+    function slice(start?: number, end?: number): Row<Name>[] {
+      let args = arguments.length
+      const results =
+        args == 0
+          ? select_all.all()
+          : args == 1
+          ? slice_1.all({ start })
+          : slice_2.all({ start, end })
+      const n = results.length
+      let i: number
+      let id: number
+      for (i = 0; i < n; i++) {
+        id = results[i]
+        results[i] = proxyRow(id)
       }
       return results
     }
@@ -393,6 +440,8 @@ export function proxySchema<Dict extends { [table: string]: object[] }>(
           case 'push':
           case 'forEach':
           case 'map':
+          case 'filter':
+          case 'slice':
             return true
         }
         if (typeof p !== 'symbol') {
@@ -437,6 +486,10 @@ export function proxySchema<Dict extends { [table: string]: object[] }>(
             return forEach
           case 'map':
             return map
+          case 'filter':
+            return arrayFilter
+          case 'slice':
+            return slice
           case 'push':
             return push
         }
