@@ -237,14 +237,14 @@ drop table "order";
         expect(proxy.log.push({})).to.equals(4)
       })
     })
-    context('populated tests', () => {
+    context('access each populated row', () => {
       beforeEach(() => {
         proxy.log.length = 0
         proxy.log[1] = { remark: 'first' }
         proxy.log[3] = { remark: 'third' }
         proxy.log[10] = { remark: 'ten' }
       })
-      it('should access each row from proxy.table.forEach()', () => {
+      it('should access via .forEach() method', () => {
         let forEach = fake()
         proxy.log.forEach(forEach)
         expect(forEach.callCount).to.equals(3)
@@ -254,7 +254,7 @@ drop table "order";
           [{}, 10, proxy.log],
         ])
       })
-      it('should access each row from proxy.table.map()', () => {
+      it('should access via .map() method', () => {
         let result = proxy.log.map(row => row.remark)
         expect(result).to.deep.equals(['first', 'third', 'ten'])
       })
@@ -273,6 +273,23 @@ drop table "order";
         expect(result).to.have.lengthOf(1)
         expect(result[0].id).to.equals(3)
         expect(result[0].remark).to.equals('third')
+      })
+      it('should access via for-loop', () => {
+        let each = fake()
+        for (let row of proxy.log) {
+          expect(typeof row).to.equals('object')
+          expect(typeof row.id).to.equals('number')
+          expect(typeof row.remark).to.equals('string')
+          each({
+            id: row.id,
+            remark: row.remark,
+          })
+        }
+        expect(each.callCount).to.equals(2)
+        expect(each.args).to.deep.equals([
+          [{ id: 1, remark: 'first' }],
+          [{ id: 3, remark: 'third' }],
+        ])
       })
     })
   })
