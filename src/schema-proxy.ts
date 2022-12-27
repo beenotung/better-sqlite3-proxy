@@ -251,11 +251,11 @@ export function proxySchema<Dict extends { [table: string]: object[] }>(
     }
 
     let slice_1 = db
-      .prepare(/* sql */ `select id from "${table}" where id > :start`)
+      .prepare(/* sql */ `select id from "${table}" where id >= :start`)
       .pluck()
     let slice_2 = db
       .prepare(
-        /* sql */ `select id from "${table}" where id > :start and id < :end`,
+        /* sql */ `select id from "${table}" where id >= :start and id < :end`,
       )
       .pluck()
     function slice(start?: number, end?: number): Row<Name>[] {

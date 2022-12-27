@@ -269,7 +269,7 @@ drop table "order";
         expect(result[1].remark).to.equals('ten')
       })
       it('should access via .slice() method', () => {
-        let result = proxy.log.slice(2, 10)
+        let result = proxy.log.slice(3, 10)
         expect(result).to.have.lengthOf(1)
         expect(result[0].id).to.equals(3)
         expect(result[0].remark).to.equals('third')
