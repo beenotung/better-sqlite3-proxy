@@ -27,7 +27,7 @@ export type Post = {
 }
 export type Log = {
   id?: number
-  remark?: string
+  remark: string
 }
 export type Order = {
   id?: number
