@@ -21,16 +21,16 @@ Powered by [better-sqlite3](https://github.com/WiseLibs/better-sqlite3)🔋
 
 ### Array Operations Mapping
 
-| Array Operation         | Mapped SQL Operation                  |
-| ----------------------- | ------------------------------------- |
-| array.push(...object)   | insert                                |
-| array[id] = object      | insert or update                      |
+| Array Operation          | Mapped SQL Operation                  |
+| ------------------------ | ------------------------------------- |
+| array.push(...object)    | insert                                |
+| array[id] = object       | insert or update                      |
 | update(array,id,partial) | update                                |
-| find(array, filter)     | select where filter limit 1           |
-| filter(array, filter)   | select where filter                   |
-| delete array[id]        | delete                                |
-| array.length = length   | delete where id > length              |
-| array.slice(start, end) | select where id >= start and id < end |
+| find(array, filter)      | select where filter limit 1           |
+| filter(array, filter)    | select where filter                   |
+| delete array[id]         | delete                                |
+| array.length = length    | delete where id > length              |
+| array.slice(start, end)  | select where id >= start and id < end |
 
 for-of loop, array.forEach(fn), array.filter(fn) and array.map(fn) are also supported, they will receive proxy-ed rows.
 
