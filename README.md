@@ -25,6 +25,7 @@ Powered by [better-sqlite3](https://github.com/WiseLibs/better-sqlite3)🔋
 | ----------------------- | ------------------------------------- |
 | array.push(...object)   | insert                                |
 | array[id] = object      | insert or update                      |
+| update(array,id,partial) | update                                |
 | find(array, filter)     | select where filter limit 1           |
 | filter(array, filter)   | select where filter                   |
 | delete array[id]        | delete                                |
@@ -36,6 +37,8 @@ for-of loop, array.forEach(fn), array.filter(fn) and array.map(fn) are also supp
 Tips: You can use for-of loop instead of array.forEach(fn) if you may terminate the loop early
 
 Tips: You can use filter(partial) instead of array.filter(fn) if possible for better performance
+
+Tips: You can use update(array,id,partial) instead of Object.assign(row,partial) to update multiple columns in batch
 
 Pro Tips: If you need complex query that can be expressed in sql, use prepared statement will have fastest runtime performance.
 

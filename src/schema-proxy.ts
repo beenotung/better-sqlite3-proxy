@@ -1,6 +1,11 @@
 import { Statement } from 'better-sqlite3'
 import { DBInstance } from 'better-sqlite3-schema'
-import { unProxySymbol, findSymbol, filterSymbol } from './extension'
+import {
+  unProxySymbol,
+  findSymbol,
+  filterSymbol,
+  updateSymbol,
+} from './extension'
 import { parseCreateTable } from 'quick-erd/dist/db/sqlite-parser'
 import { toSqliteTimestamp } from './helpers'
 
@@ -435,6 +440,7 @@ export function proxySchema<Dict extends { [table: string]: object[] }>(
           case unProxySymbol:
           case findSymbol:
           case filterSymbol:
+          case updateSymbol:
           case Symbol.iterator:
           case 'length':
           case 'push':
@@ -478,6 +484,8 @@ export function proxySchema<Dict extends { [table: string]: object[] }>(
             return find
           case filterSymbol:
             return filter
+          case updateSymbol:
+            return update_run
           case Symbol.iterator:
             return iterator
           case 'length':

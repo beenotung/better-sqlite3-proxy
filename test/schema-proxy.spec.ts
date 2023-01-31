@@ -2,7 +2,7 @@ import { DBInstance, newDB } from 'better-sqlite3-schema'
 import { expect } from 'chai'
 import { join } from 'path'
 import { proxySchema } from '../src/schema-proxy'
-import { filter, find, unProxy } from '../src/extension'
+import { filter, find, unProxy, update } from '../src/extension'
 import { existsSync, unlinkSync } from 'fs'
 import { fake } from 'sinon'
 
@@ -355,5 +355,15 @@ drop table "order";
       expect(matches).to.have.lengthOf(1)
       expect(matches[0].id).to.equals(post_id)
     })
+  })
+  it('should update multiple columns in batch', () => {
+    proxy.user[1] = { username: 'admin', is_admin: true }
+    let user = proxy.user[1]
+    expect(user.username).to.equals('admin')
+    expect(user.is_admin).to.be.equals(1)
+
+    update(proxy.user, 1, { username: 'alice', is_admin: false })
+    expect(user.username).to.equals('alice')
+    expect(user.is_admin).to.be.equals(0)
   })
 })

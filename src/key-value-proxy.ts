@@ -1,6 +1,11 @@
 import { Statement } from 'better-sqlite3'
 import { DBInstance } from 'better-sqlite3-schema'
-import { filterSymbol, findSymbol, unProxySymbol } from './extension'
+import {
+  filterSymbol,
+  findSymbol,
+  unProxySymbol,
+  updateSymbol,
+} from './extension'
 
 export function proxyKeyValue<Dict extends { [table: string]: object[] }>(
   db: DBInstance,
@@ -113,12 +118,21 @@ create table if not exists ${table} (
       return select.all(filter).map(decode)
     }
 
+    function partialUpdate(id: number, partial: Partial<Row<Name>>) {
+      if (count_by_id.get(id) == 1) {
+        let value = decode(select_by_id.get(id))
+        let json = encode({ ...value, ...partial })
+        update.run({ id, value: json })
+      }
+    }
+
     let proxy = new Proxy([] as unknown[] as Table, {
       has(target, p) {
         switch (p) {
           case unProxySymbol:
           case findSymbol:
           case filterSymbol:
+          case updateSymbol:
           case Symbol.iterator:
           case 'length':
           case 'push':
@@ -159,6 +173,8 @@ create table if not exists ${table} (
             return find
           case filterSymbol:
             return filter
+          case updateSymbol:
+            return partialUpdate
           case Symbol.iterator:
             return iterator
           case 'length':

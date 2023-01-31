@@ -2,13 +2,14 @@ import { DBInstance, newDB } from 'better-sqlite3-schema'
 import { expect } from 'chai'
 import { join } from 'path'
 import { proxyKeyValue } from '../src/key-value-proxy'
-import { filter, find, unProxy } from '../src/extension'
+import { filter, find, unProxy, update } from '../src/extension'
 import { existsSync, unlinkSync } from 'fs'
 
 type DBProxy = {
   user: {
     id?: number
     username: string
+    is_admin: boolean
   }[]
   post: {
     id?: number
@@ -127,5 +128,16 @@ context('proxyDB TestSuit', () => {
       delete proxy.log[2]
       expect(proxy.log.push({})).to.equals(4)
     })
+  })
+  it('should update multiple columns in batch', () => {
+    proxy.user[1] = { username: 'admin', is_admin: true }
+    let user = proxy.user[1]
+    expect(user.username).to.equals('admin')
+    expect(user.is_admin).to.be.equals(true)
+
+    update(proxy.user, 1, { username: 'alice', is_admin: false })
+    user = proxy.user[1]
+    expect(user.username).to.equals('alice')
+    expect(user.is_admin).to.be.equals(false)
   })
 })
