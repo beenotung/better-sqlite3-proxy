@@ -1,4 +1,4 @@
-import DB from 'better-sqlite3-helper'
+import DB from '@beenotung/better-sqlite3-helper'
 import { proxySchema, unProxy, find, filter } from '../src'
 
 let db = DB({

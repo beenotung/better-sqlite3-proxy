@@ -50,6 +50,8 @@ setting the properties will trigger update on corresponding column.
 
 ## Usage Example
 
+Remark: `@beenotung/better-sqlite3-helper` is a fork of `better-sqlite3-helper`. It updates the dependency on better-sqlite3 to v8+ which includes arm64 prebuilds for macOS.
+
 <details>
 <summary>Proxy Relational Tables (click to expand)
 
@@ -58,7 +60,7 @@ More Examples in [schema-proxy.spec.ts](./test/schema-proxy.spec.ts)
 </summary>
 
 ```typescript
-import DB from 'better-sqlite3-helper'
+import DB from '@beenotung/better-sqlite3-helper'
 import { proxySchema, unProxy, find, filter } from 'better-sqlite3-proxy'
 
 let db = DB({
@@ -160,7 +162,7 @@ More Examples in [key-value.spec.ts](./test/key-value-proxy.spec.ts)
 </summary>
 
 ```typescript
-import DB from 'better-sqlite3-helper'
+import DB from '@beenotung/better-sqlite3-helper'
 import { proxyKeyValue, find, filter } from 'better-sqlite3-proxy'
 
 export let db = DB({
