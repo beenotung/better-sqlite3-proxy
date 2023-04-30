@@ -23,11 +23,11 @@ export type Post = {
   content: string
   created_at?: string
   author?: User
-  delete_time?: string | Date
+  delete_time?: string | Date | null
 }
 export type Log = {
   id?: number
-  remark?: string
+  remark: string
 }
 export type Order = {
   id?: number
@@ -182,12 +182,12 @@ drop table "order";
   it('should find record by non-id column', () => {
     proxy.user[1] = { id: 1, username: 'Alice' }
     proxy.user[2] = { id: 2, username: 'Bob' }
-    expect(unProxy(find(proxy.user, { username: 'Alice' }))).to.deep.equals({
+    expect(unProxy(find(proxy.user, { username: 'Alice' })!)).to.deep.equals({
       id: 1,
       username: 'Alice',
       is_admin: null,
     })
-    expect(unProxy(find(proxy.user, { username: 'Bob' }))).to.deep.equals({
+    expect(unProxy(find(proxy.user, { username: 'Bob' })!)).to.deep.equals({
       id: 2,
       username: 'Bob',
       is_admin: null,
@@ -198,7 +198,7 @@ drop table "order";
     proxy.post[1] = { user_id: 1, content: 'Hello from Alice' }
     proxy.post[2] = { user_id: 2, content: 'Hello from Bob' }
     proxy.post[3] = { user_id: 1, content: 'Hi Bob' }
-    let match = find(proxy.post, { user_id: 1, content: 'Hi Bob' })
+    let match = find(proxy.post, { user_id: 1, content: 'Hi Bob' })!
     expect(match).not.to.be.undefined
     expect(match.id).to.equals(3)
   })
@@ -224,17 +224,17 @@ drop table "order";
         proxy.log.length = 0
       })
       it('should returns id of last insert row', () => {
-        expect(proxy.log.push({})).to.equals(1)
+        expect(proxy.log.push({ remark: '' })).to.equals(1)
       })
       it('should reuse id of last row', () => {
-        expect(proxy.log.push({})).to.equals(2)
+        expect(proxy.log.push({ remark: '' })).to.equals(2)
         delete proxy.log[2]
-        expect(proxy.log.push({})).to.equals(2)
+        expect(proxy.log.push({ remark: '' })).to.equals(2)
       })
       it('should not reuse id of non-last row', () => {
-        expect(proxy.log.push({})).to.equals(3)
+        expect(proxy.log.push({ remark: '' })).to.equals(3)
         delete proxy.log[2]
-        expect(proxy.log.push({})).to.equals(4)
+        expect(proxy.log.push({ remark: '' })).to.equals(4)
       })
     })
     context('access each populated row', () => {
@@ -297,7 +297,7 @@ drop table "order";
   it('should resolve reference row from foreign key', () => {
     expect(proxy.post[3].user_id).to.equals(1)
     expect(proxy.user[1].username).to.equals('Alice')
-    let author = proxy.post[3].author
+    let author = proxy.post[3].author!
     expect(author).not.to.be.undefined
     expect(author.username).to.equals('Alice')
   })
@@ -346,7 +346,7 @@ drop table "order";
       expect(proxy.post[post_id].delete_time).to.equals(timestamp)
     })
     it('should convert when find', () => {
-      let match = find(proxy.post, { id: post_id, delete_time: date })
+      let match = find(proxy.post, { id: post_id, delete_time: date })!
       expect(match).not.undefined
       expect(match.id).to.equals(post_id)
     })
