@@ -32,6 +32,17 @@ export function filter<T extends object>(table: T[], filter: Partial<T>): T[] {
   )
 }
 
+export let countSymbol = Symbol('count')
+
+export function count<T extends object>(table: T[], partial: Partial<T>) {
+  if (countSymbol in table) {
+    return (table as any)[countSymbol](partial)
+  }
+  throw new Error(
+    'expect table proxy, but got: ' + Object.prototype.toString.call(table),
+  )
+}
+
 export let updateSymbol = Symbol('update')
 
 export function update<T extends object>(

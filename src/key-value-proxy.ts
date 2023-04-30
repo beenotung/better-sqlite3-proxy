@@ -2,6 +2,7 @@ import { Statement } from 'better-sqlite3'
 import { DBInstance } from 'better-sqlite3-schema'
 import {
   filterSymbol,
+  countSymbol,
   findSymbol,
   unProxySymbol,
   updateSymbol,
@@ -34,7 +35,9 @@ create table if not exists ${table} (
     let select_by_id = db
       .prepare(/* sql */ `select value from ${table} where id = ?`)
       .pluck()
-    let count = db.prepare(/* sql */ `select count(*) from ${table}`).pluck()
+    let count_all = db
+      .prepare(/* sql */ `select count(*) from ${table}`)
+      .pluck()
     let delete_by_id = db.prepare(/* sql */ `delete from ${table} where id = ?`)
     let delete_by_length = db.prepare(
       /* sql */ `delete from ${table} where id > ?`,
@@ -118,6 +121,25 @@ create table if not exists ${table} (
       return select.all(filter).map(decode)
     }
 
+    let count_dict: Record<string, Statement> = {}
+    function count(filter: Partial<Row<Name>>): number {
+      let keys = Object.keys(filter)
+      if (keys.length === 0) {
+        throw new Error('count() expects non-empty filter')
+      }
+      let key = keys.join('|')
+      let select =
+        count_dict[key] ||
+        (count_dict[key] = db
+          .prepare(
+            /* sql */ `select count(*) from ${table} where ${keys
+              .map(key => `json_extract(value,'$.${key}') = :${key}`)
+              .join(' and ')}`,
+          )
+          .pluck())
+      return select.get(filter)
+    }
+
     function partialUpdate(id: number, partial: Partial<Row<Name>>) {
       if (count_by_id.get(id) == 1) {
         let value = decode(select_by_id.get(id))
@@ -132,6 +154,7 @@ create table if not exists ${table} (
           case unProxySymbol:
           case findSymbol:
           case filterSymbol:
+          case countSymbol:
           case updateSymbol:
           case Symbol.iterator:
           case 'length':
@@ -173,12 +196,14 @@ create table if not exists ${table} (
             return find
           case filterSymbol:
             return filter
+          case countSymbol:
+            return count
           case updateSymbol:
             return partialUpdate
           case Symbol.iterator:
             return iterator
           case 'length':
-            return count.get()
+            return count_all.get()
           case 'push':
             return push
         }

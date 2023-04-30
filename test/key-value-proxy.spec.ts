@@ -2,7 +2,7 @@ import { DBInstance, newDB } from 'better-sqlite3-schema'
 import { expect } from 'chai'
 import { join } from 'path'
 import { proxyKeyValue } from '../src/key-value-proxy'
-import { filter, find, unProxy, update } from '../src/extension'
+import { count, filter, find, unProxy, update } from '../src/extension'
 import { existsSync, unlinkSync } from 'fs'
 
 type DBProxy = {
@@ -110,6 +110,9 @@ context('proxyDB TestSuit', () => {
       { id: 1, user_id: 1, content: 'Hello from Alice' },
       { id: 3, user_id: 1, content: 'Hi Bob' },
     ])
+  })
+  it('should count records by any columns', () => {
+    expect(count(proxy.post, { user_id: 1 })).to.equals(2)
   })
   context('proxy.table.push()', () => {
     before(() => {

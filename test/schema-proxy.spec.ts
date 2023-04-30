@@ -2,7 +2,7 @@ import { DBInstance, newDB } from 'better-sqlite3-schema'
 import { expect } from 'chai'
 import { join } from 'path'
 import { proxySchema } from '../src/schema-proxy'
-import { filter, find, unProxy, update } from '../src/extension'
+import { count, filter, find, unProxy, update } from '../src/extension'
 import { existsSync, unlinkSync } from 'fs'
 import { fake } from 'sinon'
 
@@ -213,6 +213,14 @@ drop table "order";
     proxy.post[2].delete_time = 'mock-time'
     let matches = filter(proxy.post, { delete_time: null })
     expect(matches).to.have.lengthOf(2)
+  })
+  it('should count records by any columns', () => {
+    expect(count(proxy.post, { user_id: 1 })).to.equals(2)
+  })
+  it('should count nullable columns', () => {
+    expect(proxy.post).to.have.lengthOf(3)
+    proxy.post[2].delete_time = 'mock-time'
+    expect(count(proxy.post, { delete_time: null })).to.equals(2)
   })
   it('should find nullable columns', () => {
     let match = find(proxy.post, { delete_time: null })

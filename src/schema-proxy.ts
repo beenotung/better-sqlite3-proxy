@@ -4,6 +4,7 @@ import {
   unProxySymbol,
   findSymbol,
   filterSymbol,
+  countSymbol,
   updateSymbol,
 } from './extension'
 import { parseCreateTable } from 'quick-erd/dist/db/sqlite-parser'
@@ -77,7 +78,9 @@ export function proxySchema<Dict extends { [table: string]: object[] }>(
     )
     let select_all = db.prepare(/* sql */ `select * from "${table}"`)
 
-    let count = db.prepare(/* sql */ `select count(*) from "${table}"`).pluck()
+    let count_all = db
+      .prepare(/* sql */ `select count(*) from "${table}"`)
+      .pluck()
 
     let select_last_id = db
       .prepare(/* sql */ `select max(id) from "${table}"`)
@@ -375,6 +378,48 @@ export function proxySchema<Dict extends { [table: string]: object[] }>(
       return select.all(filter).map(proxyRow)
     }
 
+    let count_dict: Record<string, Statement> = {}
+    function count(filter: Partial<Row<Name>>): number {
+      let keys = Object.keys(filter) as Array<string & keyof typeof filter>
+      if (keys.length === 0) {
+        throw new Error('count() expects non-empty filter')
+      }
+      let key = keys
+        .map(key => {
+          const value = filter[key] as unknown
+          switch (value) {
+            case null:
+              return `${key}(null)`
+            case true:
+              filter[key] = 1 as any
+              break
+            case false:
+              filter[key] = 0 as any
+              break
+            default:
+              if (value instanceof Date)
+                filter[key] = toSqliteTimestamp(value) as any
+              break
+          }
+          return key
+        })
+        .join('|')
+      let select =
+        count_dict[key] ||
+        (count_dict[key] = db
+          .prepare(
+            /* sql */ `select count(*) from "${table}" where ${keys
+              .map(key =>
+                filter[key] === null
+                  ? `"${key}" is null`
+                  : `"${key}" = :${key}`,
+              )
+              .join(' and ')}`,
+          )
+          .pluck())
+      return select.get(filter)
+    }
+
     let proxyRow = <Name extends TableName>(id: number): Row<Name> => {
       let proxy = rowProxyMap.get(id)
       if (proxy) {
@@ -440,6 +485,7 @@ export function proxySchema<Dict extends { [table: string]: object[] }>(
           case unProxySymbol:
           case findSymbol:
           case filterSymbol:
+          case countSymbol:
           case updateSymbol:
           case Symbol.iterator:
           case 'length':
@@ -484,12 +530,14 @@ export function proxySchema<Dict extends { [table: string]: object[] }>(
             return find
           case filterSymbol:
             return filter
+          case countSymbol:
+            return count
           case updateSymbol:
             return update_run
           case Symbol.iterator:
             return iterator
           case 'length':
-            return count.get()
+            return count_all.get()
           case 'forEach':
             return forEach
           case 'map':
