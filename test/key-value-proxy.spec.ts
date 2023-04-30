@@ -9,7 +9,7 @@ type DBProxy = {
   user: {
     id?: number
     username: string
-    is_admin: boolean
+    is_admin?: boolean
   }[]
   post: {
     id?: number
