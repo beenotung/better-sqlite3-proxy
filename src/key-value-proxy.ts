@@ -29,41 +29,43 @@ export function proxyKeyValue<Dict extends { [table: string]: object[] }>(
       return tableProxyMap.get(table) as Table
     }
     db.exec(/* sql */ `
-create table if not exists ${table} (
+create table if not exists "${table}" (
   id integer primary key
 , value json
 )`)
     let select_by_id = db
-      .prepare(/* sql */ `select value from ${table} where id = ?`)
+      .prepare(/* sql */ `select value from "${table}" where id = ?`)
       .pluck()
     let count_all = db
-      .prepare(/* sql */ `select count(*) from ${table}`)
+      .prepare(/* sql */ `select count(*) from "${table}"`)
       .pluck()
-    let delete_by_id = db.prepare(/* sql */ `delete from ${table} where id = ?`)
+    let delete_by_id = db.prepare(
+      /* sql */ `delete from "${table}" where id = ?`,
+    )
     let delete_by_length = db.prepare(
-      /* sql */ `delete from ${table} where id > ?`,
+      /* sql */ `delete from "${table}" where id > ?`,
     )
     let update = db.prepare(
-      /* sql */ `update ${table} set value = :value where id = :id`,
+      /* sql */ `update "${table}" set value = :value where id = :id`,
     )
     let insert_with_id = db.prepare(
-      /* sql */ `insert into ${table} (id, value) values (:id,:value)`,
+      /* sql */ `insert into "${table}" (id, value) values (:id,:value)`,
     )
     let insert_without_id = db.prepare(
-      /* sql */ `insert into ${table} (value) values (?)`,
+      /* sql */ `insert into "${table}" (value) values (?)`,
     )
     let count_by_id = db
-      .prepare(/* sql */ `select count(*) from ${table} where id = ?`)
+      .prepare(/* sql */ `select count(*) from "${table}" where id = ?`)
       .pluck()
     let select_all_value = db
-      .prepare(/* sql */ `select value from ${table}`)
+      .prepare(/* sql */ `select value from "${table}"`)
       .pluck()
     let select_by_offset = db.prepare(
-      /* sql */ `select value from ${table} limit 1 offset ?`,
+      /* sql */ `select value from "${table}" limit 1 offset ?`,
     )
 
     let select_last_id = db
-      .prepare(/* sql */ `select max(id) from ${table}`)
+      .prepare(/* sql */ `select max(id) from "${table}"`)
       .pluck()
 
     function push(): number {
@@ -87,7 +89,7 @@ create table if not exists ${table} (
     }
 
     type KeyValue = { id: number; value: string }
-    let select_all = db.prepare(/* sql */ `select id, value from ${table}`)
+    let select_all = db.prepare(/* sql */ `select id, value from "${table}"`)
 
     function forEach(
       callbackfn: (value: Row<Name>, index: number, array: Row<Name>[]) => void,
@@ -141,11 +143,11 @@ create table if not exists ${table} (
 
     let slice_0 = select_all_value
     let slice_1 = db
-      .prepare(/* sql */ `select value from ${table} where id >= :start`)
+      .prepare(/* sql */ `select value from "${table}" where id >= :start`)
       .pluck()
     let slice_2 = db
       .prepare(
-        /* sql */ `select value from ${table} where id >= :start and id < :end`,
+        /* sql */ `select value from "${table}" where id >= :start and id < :end`,
       )
       .pluck()
     function slice(start?: number, end?: number): Row<Name>[] {
@@ -176,7 +178,7 @@ create table if not exists ${table} (
         find_dict[key] ||
         (find_dict[key] = db
           .prepare(
-            /* sql */ `select value from ${table} where ${keys
+            /* sql */ `select value from "${table}" where ${keys
               .map(key => toWhereCondition(filter, key))
               .join(' and ')} limit 1`,
           )
@@ -195,7 +197,7 @@ create table if not exists ${table} (
         filter_dict[key] ||
         (filter_dict[key] = db
           .prepare(
-            /* sql */ `select value from ${table} where ${keys
+            /* sql */ `select value from "${table}" where ${keys
               .map(key => toWhereCondition(filter, key))
               .join(' and ')}`,
           )
@@ -215,7 +217,7 @@ create table if not exists ${table} (
         count_dict[key] ||
         (count_dict[key] = db
           .prepare(
-            /* sql */ `select count(*) from ${table} where ${keys
+            /* sql */ `select count(*) from "${table}" where ${keys
               .map(key => toWhereCondition(filter, key))
               .join(' and ')}`,
           )
