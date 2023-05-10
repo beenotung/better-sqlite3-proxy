@@ -15,8 +15,8 @@ Powered by [better-sqlite3](https://github.com/WiseLibs/better-sqlite3)🔋
   - [x] delete
 - [x] auto resolve reference row from foreign key into nested objects like [ref-db](https://github.com/beenotung/ref-db)
 - [x] auto convert column values into sqlite3 format
-  - [x] convert true/false to 1/0
-  - [x] convert Date instance to GMT timestamp
+  - [x] convert `true`/`false` to `1`/`0`
+  - [x] convert `Date` instance to GMT timestamp
   - [x] support searching nullable columns
 
 ### Array Operations Mapping
