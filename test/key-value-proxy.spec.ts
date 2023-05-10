@@ -2,8 +2,9 @@ import { DBInstance, newDB } from 'better-sqlite3-schema'
 import { expect } from 'chai'
 import { join } from 'path'
 import { proxyKeyValue } from '../src/key-value-proxy'
-import { count, filter, find, unProxy, update } from '../src/extension'
+import { count, filter, find, notNull, unProxy, update } from '../src/extension'
 import { existsSync, unlinkSync } from 'fs'
+import { fake } from 'sinon'
 
 type DBProxy = {
   user: {
@@ -19,10 +20,11 @@ type DBProxy = {
   }[]
   log: {
     id?: number
+    remark?: string | null
   }[]
 }
 
-context('proxyDB TestSuit', () => {
+context('proxyKeyValue TestSuit', () => {
   let db: DBInstance
   let proxy: DBProxy
 
@@ -114,22 +116,139 @@ context('proxyDB TestSuit', () => {
   it('should count records by any columns', () => {
     expect(count(proxy.post, { user_id: 1 })).to.equals(2)
   })
-  context('proxy.table.push()', () => {
+  context('null condition', () => {
     before(() => {
       proxy.log.length = 0
+      proxy.log[1] = { id: 1, remark: 'mock-value-1' }
+      proxy.log[2] = { id: 2, remark: null }
+      proxy.log[3] = { id: 3, remark: 'mock-value-3' }
+      proxy.log[4] = { id: 4, remark: null }
+      proxy.log[5] = { id: 5, remark: 'mock-value-5' }
+      expect(proxy.log).to.have.lengthOf(5)
     })
-    it('should returns id of last insert row', () => {
-      expect(proxy.log.push({})).to.equals(1)
+    context('where is null', () => {
+      it('should find columns', () => {
+        expect(find(proxy.log, { id: 1, remark: null })).undefined
+        expect(find(proxy.log, { id: 2, remark: null })).not.undefined
+      })
+      it('should filter columns', () => {
+        expect(filter(proxy.log, { remark: null })).to.have.lengthOf(2)
+      })
+      it('should count columns', () => {
+        expect(count(proxy.log, { remark: null })).to.equals(2)
+      })
     })
-    it('should reuse id of last row', () => {
-      expect(proxy.log.push({})).to.equals(2)
-      delete proxy.log[2]
-      expect(proxy.log.push({})).to.equals(2)
+    context('where is not null', () => {
+      it('should find columns', () => {
+        expect(find(proxy.log, { id: 1, remark: notNull })).not.undefined
+        expect(find(proxy.log, { id: 2, remark: notNull })).undefined
+      })
+      it('should filter columns', () => {
+        expect(filter(proxy.log, { remark: notNull })).to.have.lengthOf(3)
+      })
+      it('should count columns', () => {
+        expect(count(proxy.log, { remark: notNull })).to.equals(3)
+      })
     })
-    it('should not reuse id of non-last row', () => {
-      expect(proxy.log.push({})).to.equals(3)
-      delete proxy.log[2]
-      expect(proxy.log.push({})).to.equals(4)
+  })
+  context('proxy array methods', () => {
+    context('proxy.table.push()', () => {
+      before(() => {
+        proxy.log.length = 0
+      })
+      it('should returns id of last insert row', () => {
+        expect(proxy.log.push({ remark: '' })).to.equals(1)
+      })
+      it('should reuse id of last row', () => {
+        expect(proxy.log.push({ remark: '' })).to.equals(2)
+        delete proxy.log[2]
+        expect(proxy.log.push({ remark: '' })).to.equals(2)
+      })
+      it('should not reuse id of non-last row', () => {
+        expect(proxy.log.push({ remark: '' })).to.equals(3)
+        delete proxy.log[2]
+        expect(proxy.log.push({ remark: '' })).to.equals(4)
+      })
+    })
+    context('access each populated row', () => {
+      beforeEach(() => {
+        proxy.log.length = 0
+        proxy.log[1] = { id: 1, remark: 'first' }
+        proxy.log[3] = { id: 3, remark: 'third' }
+        proxy.log[10] = { id: 10, remark: 'ten' }
+      })
+      it('should access via .forEach() method', () => {
+        let forEach = fake()
+        proxy.log.forEach(forEach)
+        expect(forEach.callCount).to.equals(3)
+        expect(forEach.args).to.deep.equals([
+          [{ id: 1, remark: 'first' }, 1, proxy.log],
+          [{ id: 3, remark: 'third' }, 3, proxy.log],
+          [{ id: 10, remark: 'ten' }, 10, proxy.log],
+        ])
+      })
+      it('should access via .map() method', () => {
+        let result = proxy.log.map(row => row.remark)
+        expect(result).to.deep.equals(['first', 'third', 'ten'])
+      })
+      it('should access via .filter() method', () => {
+        let result = proxy.log.filter(row => row.remark?.startsWith('t'))
+        expect(result).to.have.lengthOf(2)
+
+        expect(result[0].id).to.equals(3)
+        expect(result[0].remark).to.equals('third')
+
+        expect(result[1].id).to.equals(10)
+        expect(result[1].remark).to.equals('ten')
+      })
+      it('should access via .slice() method', () => {
+        let result = proxy.log.slice()
+        expect(result).to.have.lengthOf(3)
+
+        expect(result[0].id).to.equals(1)
+        expect(result[0].remark).to.equals('first')
+
+        expect(result[1].id).to.equals(3)
+        expect(result[1].remark).to.equals('third')
+
+        expect(result[2].id).to.equals(10)
+        expect(result[2].remark).to.equals('ten')
+      })
+      it('should access via .slice(start) method', () => {
+        let result = proxy.log.slice(3)
+        expect(result).to.have.lengthOf(2)
+
+        expect(result[0].id).to.equals(3)
+        expect(result[0].remark).to.equals('third')
+
+        expect(result[1].id).to.equals(10)
+        expect(result[1].remark).to.equals('ten')
+      })
+      it('should access via .slice(start,end) method', () => {
+        let result = proxy.log.slice(3, 10)
+        expect(result).to.have.lengthOf(1)
+
+        expect(result[0].id).to.equals(3)
+        expect(result[0].remark).to.equals('third')
+      })
+      it('should access via for-loop', () => {
+        let each = fake()
+        for (let row of proxy.log) {
+          expect(typeof row).to.equals('object')
+          expect(typeof row.id).to.equals('number')
+          expect(typeof row.remark).to.equals('string')
+          each({
+            id: row.id,
+            remark: row.remark,
+          })
+        }
+        expect(each.callCount).to.equals(3)
+        expect(each.args).to.deep.equals([
+          [{ id: 1, remark: 'first' }],
+          [{ id: 3, remark: 'third' }],
+          [{ id: 10, remark: 'ten' }],
+        ])
+      })
     })
   })
   it('should update multiple columns in batch', () => {

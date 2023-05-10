@@ -57,3 +57,5 @@ export function update<T extends object>(
     'expect table proxy, but got: ' + Object.prototype.toString.call(table),
   )
 }
+
+export let notNull = Symbol('not null') as any as null

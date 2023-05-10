@@ -2,7 +2,7 @@ import { DBInstance, newDB } from 'better-sqlite3-schema'
 import { expect } from 'chai'
 import { join } from 'path'
 import { proxySchema } from '../src/schema-proxy'
-import { count, filter, find, unProxy, update } from '../src/extension'
+import { count, filter, find, notNull, unProxy, update } from '../src/extension'
 import { existsSync, unlinkSync } from 'fs'
 import { fake } from 'sinon'
 
@@ -27,7 +27,7 @@ export type Post = {
 }
 export type Log = {
   id?: number
-  remark: string
+  remark: string | null
 }
 export type Order = {
   id?: number
@@ -35,7 +35,7 @@ export type Order = {
   user?: User
 }
 
-context('proxyDB TestSuit', () => {
+context('proxySchema TestSuit', () => {
   let db: DBInstance
   let proxy: DBProxy
 
@@ -208,23 +208,43 @@ drop table "order";
     expect(matches[0].id).to.equals(1)
     expect(matches[1].id).to.equals(3)
   })
-  it('should filter nullable columns', () => {
-    expect(proxy.post).to.have.lengthOf(3)
-    proxy.post[2].delete_time = 'mock-time'
-    let matches = filter(proxy.post, { delete_time: null })
-    expect(matches).to.have.lengthOf(2)
-  })
   it('should count records by any columns', () => {
     expect(count(proxy.post, { user_id: 1 })).to.equals(2)
   })
-  it('should count nullable columns', () => {
-    expect(proxy.post).to.have.lengthOf(3)
-    proxy.post[2].delete_time = 'mock-time'
-    expect(count(proxy.post, { delete_time: null })).to.equals(2)
-  })
-  it('should find nullable columns', () => {
-    let match = find(proxy.post, { delete_time: null })
-    expect(match).not.undefined
+  context('null condition', () => {
+    before(() => {
+      proxy.log.length = 0
+      proxy.log[1] = { remark: 'mock-value-1' }
+      proxy.log[2] = { remark: null }
+      proxy.log[3] = { remark: 'mock-value-3' }
+      proxy.log[4] = { remark: null }
+      proxy.log[5] = { remark: 'mock-value-5' }
+      expect(proxy.log).to.have.lengthOf(5)
+    })
+    context('where is null', () => {
+      it('should find columns', () => {
+        expect(find(proxy.log, { id: 1, remark: null })).undefined
+        expect(find(proxy.log, { id: 2, remark: null })).not.undefined
+      })
+      it('should filter columns', () => {
+        expect(filter(proxy.log, { remark: null })).to.have.lengthOf(2)
+      })
+      it('should count columns', () => {
+        expect(count(proxy.log, { remark: null })).to.equals(2)
+      })
+    })
+    context('where is not null', () => {
+      it('should find columns', () => {
+        expect(find(proxy.log, { id: 1, remark: notNull })).not.undefined
+        expect(find(proxy.log, { id: 2, remark: notNull })).undefined
+      })
+      it('should filter columns', () => {
+        expect(filter(proxy.log, { remark: notNull })).to.have.lengthOf(3)
+      })
+      it('should count columns', () => {
+        expect(count(proxy.log, { remark: notNull })).to.equals(3)
+      })
+    })
   })
   context('proxy array methods', () => {
     context('proxy.table.push()', () => {
@@ -256,6 +276,7 @@ drop table "order";
         let forEach = fake()
         proxy.log.forEach(forEach)
         expect(forEach.callCount).to.equals(3)
+        // TODO test the value
         expect(forEach.args).to.deep.equals([
           [{}, 1, proxy.log],
           [{}, 3, proxy.log],
@@ -267,7 +288,7 @@ drop table "order";
         expect(result).to.deep.equals(['first', 'third', 'ten'])
       })
       it('should access via .filter() method', () => {
-        let result = proxy.log.filter(row => row.remark.startsWith('t'))
+        let result = proxy.log.filter(row => row.remark?.startsWith('t'))
         expect(result).to.have.lengthOf(2)
 
         expect(result[0].id).to.equals(3)
@@ -277,8 +298,32 @@ drop table "order";
         expect(result[1].remark).to.equals('ten')
       })
       it('should access via .slice() method', () => {
+        let result = proxy.log.slice()
+        expect(result).to.have.lengthOf(3)
+
+        expect(result[0].id).to.equals(1)
+        expect(result[0].remark).to.equals('first')
+
+        expect(result[1].id).to.equals(3)
+        expect(result[1].remark).to.equals('third')
+
+        expect(result[2].id).to.equals(10)
+        expect(result[2].remark).to.equals('ten')
+      })
+      it('should access via .slice(start) method', () => {
+        let result = proxy.log.slice(3)
+        expect(result).to.have.lengthOf(2)
+
+        expect(result[0].id).to.equals(3)
+        expect(result[0].remark).to.equals('third')
+
+        expect(result[1].id).to.equals(10)
+        expect(result[1].remark).to.equals('ten')
+      })
+      it('should access via .slice(start,end) method', () => {
         let result = proxy.log.slice(3, 10)
         expect(result).to.have.lengthOf(1)
+
         expect(result[0].id).to.equals(3)
         expect(result[0].remark).to.equals('third')
       })

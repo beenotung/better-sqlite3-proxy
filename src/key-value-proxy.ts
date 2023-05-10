@@ -7,6 +7,7 @@ import {
   unProxySymbol,
   updateSymbol,
 } from './extension'
+import { filterToKey, notNullPlaceholder } from './internal'
 
 export function proxyKeyValue<Dict extends { [table: string]: object[] }>(
   db: DBInstance,
@@ -54,7 +55,9 @@ create table if not exists ${table} (
     let count_by_id = db
       .prepare(/* sql */ `select count(*) from ${table} where id = ?`)
       .pluck()
-    let select_all = db.prepare(/* sql */ `select value from ${table}`).pluck()
+    let select_all_value = db
+      .prepare(/* sql */ `select value from ${table}`)
+      .pluck()
     let select_by_offset = db.prepare(
       /* sql */ `select value from ${table} limit 1 offset ?`,
     )
@@ -69,12 +72,12 @@ create table if not exists ${table} (
         last_id = insert_without_id.run(encode(arguments[i]))
           .lastInsertRowid as number
       }
-      return last_id || select_last_id.get()
+      return last_id || (select_last_id.get() as number)
     }
 
     function* iterator() {
       for (let offset = 0; ; offset++) {
-        let row = select_by_offset.get(offset)
+        let row = select_by_offset.get(offset) as { value: string }
         if (row) {
           yield decode(row.value)
         } else {
@@ -83,66 +86,146 @@ create table if not exists ${table} (
       }
     }
 
+    type KeyValue = { id: number; value: string }
+    let select_all = db.prepare(/* sql */ `select id, value from ${table}`)
+
+    function forEach(
+      callbackfn: (value: Row<Name>, index: number, array: Row<Name>[]) => void,
+    ): void {
+      const rows = select_all.all() as KeyValue[]
+      const n = rows.length
+      let i: number
+      let row: KeyValue
+      for (i = 0; i < n; i++) {
+        row = rows[i]
+        callbackfn(decode(row.value), row.id, proxy)
+      }
+    }
+
+    function map<U>(
+      callbackfn: (value: Row<Name>, index: number, array: Row<Name>[]) => U,
+    ): U[] {
+      const results = select_all.all() as any[]
+      const n = results.length
+      let i: number
+      let row: KeyValue
+      for (i = 0; i < n; i++) {
+        row = results[i]
+        results[i] = callbackfn(decode(row.value), row.id, proxy)
+      }
+      return results
+    }
+
+    function arrayFilter(
+      callbackfn: (
+        value: Row<Name>,
+        index: number,
+        array: Row<Name>[],
+      ) => boolean,
+    ): Row<Name>[] {
+      const rows = select_all.all() as KeyValue[]
+      const n = rows.length
+      const results: Row<Name>[] = []
+      let i: number
+      let row: KeyValue
+      let value: Row<Name>
+      for (i = 0; i < n; i++) {
+        row = rows[i]
+        value = decode(row.value)
+        if (callbackfn(value, row.id, proxy)) {
+          results.push(value)
+        }
+      }
+      return results
+    }
+
+    let slice_0 = select_all_value
+    let slice_1 = db
+      .prepare(/* sql */ `select value from ${table} where id >= :start`)
+      .pluck()
+    let slice_2 = db
+      .prepare(
+        /* sql */ `select value from ${table} where id >= :start and id < :end`,
+      )
+      .pluck()
+    function slice(start?: number, end?: number): Row<Name>[] {
+      let args = arguments.length
+      const results = (
+        args == 0
+          ? slice_0.all()
+          : args == 1
+          ? slice_1.all({ start })
+          : slice_2.all({ start, end })
+      ) as any[]
+      const n = results.length
+      let i: number
+      for (i = 0; i < n; i++) {
+        results[i] = decode(results[i])
+      }
+      return results
+    }
+
     let find_dict: Record<string, Statement> = {}
     function find(filter: Partial<Row<Name>>): Row<Name> | undefined {
-      let keys = Object.keys(filter)
+      let keys = Object.keys(filter) as Array<string & keyof typeof filter>
       if (keys.length === 0) {
         throw new Error('find() expects non-empty filter')
       }
-      let key = keys.join('|')
+      let key = filterToKey(filter)
       let select =
         find_dict[key] ||
         (find_dict[key] = db
           .prepare(
             /* sql */ `select value from ${table} where ${keys
-              .map(key => `json_extract(value, '$.${key}') = :${key}`)
+              .map(key => toWhereCondition(filter, key))
               .join(' and ')} limit 1`,
           )
           .pluck())
-      return decode(select.get(filter))
+      return decode(select.get(filter) as string)
     }
 
     let filter_dict: Record<string, Statement> = {}
     function filter(filter: Partial<Row<Name>>): Array<Row<Name>> {
-      let keys = Object.keys(filter)
+      let keys = Object.keys(filter) as Array<string & keyof typeof filter>
       if (keys.length === 0) {
         throw new Error('filter() expects non-empty filter')
       }
-      let key = keys.join('|')
+      let key = filterToKey(filter)
       let select =
         filter_dict[key] ||
         (filter_dict[key] = db
           .prepare(
             /* sql */ `select value from ${table} where ${keys
-              .map(key => `json_extract(value,'$.${key}') = :${key}`)
+              .map(key => toWhereCondition(filter, key))
               .join(' and ')}`,
           )
           .pluck())
-      return select.all(filter).map(decode)
+      let rows = select.all(filter) as string[]
+      return rows.map(decode)
     }
 
     let count_dict: Record<string, Statement> = {}
     function count(filter: Partial<Row<Name>>): number {
-      let keys = Object.keys(filter)
+      let keys = Object.keys(filter) as Array<string & keyof typeof filter>
       if (keys.length === 0) {
         throw new Error('count() expects non-empty filter')
       }
-      let key = keys.join('|')
+      let key = filterToKey(filter)
       let select =
         count_dict[key] ||
         (count_dict[key] = db
           .prepare(
             /* sql */ `select count(*) from ${table} where ${keys
-              .map(key => `json_extract(value,'$.${key}') = :${key}`)
+              .map(key => toWhereCondition(filter, key))
               .join(' and ')}`,
           )
           .pluck())
-      return select.get(filter)
+      return select.get(filter) as number
     }
 
     function partialUpdate(id: number, partial: Partial<Row<Name>>) {
       if (count_by_id.get(id) == 1) {
-        let value = decode(select_by_id.get(id))
+        let value = decode(select_by_id.get(id) as string)
         let json = encode({ ...value, ...partial })
         update.run({ id, value: json })
       }
@@ -158,6 +241,10 @@ create table if not exists ${table} (
           case updateSymbol:
           case Symbol.iterator:
           case 'length':
+          case 'forEach':
+          case 'map':
+          case 'filter':
+          case 'slice':
           case 'push':
             return true
         }
@@ -191,7 +278,7 @@ create table if not exists ${table} (
       get(target, p, receiver) {
         switch (p) {
           case unProxySymbol:
-            return select_all.all().map(decode)
+            return (select_all_value.all() as string[]).map(decode)
           case findSymbol:
             return find
           case filterSymbol:
@@ -204,13 +291,21 @@ create table if not exists ${table} (
             return iterator
           case 'length':
             return count_all.get()
+          case 'forEach':
+            return forEach
+          case 'map':
+            return map
+          case 'filter':
+            return arrayFilter
+          case 'slice':
+            return slice
           case 'push':
             return push
         }
         if (typeof p !== 'symbol') {
           let id = +p
           if (Number.isInteger(id)) {
-            return decode(select_by_id.get(id))
+            return decode(select_by_id.get(id) as string)
           }
         }
         return Reflect.get(target, p, receiver)
@@ -237,4 +332,13 @@ create table if not exists ${table} (
       return Reflect.get(target, propertyKey, receiver)
     },
   })
+}
+
+function toWhereCondition<Filter>(filter: Filter, key: string & keyof Filter) {
+  let value = filter[key]
+  return value === null
+    ? `json_extract(value,'$.${key}') is null`
+    : value === notNullPlaceholder
+    ? `json_extract(value,'$.${key}') is not null`
+    : `json_extract(value,'$.${key}') = :${key}`
 }

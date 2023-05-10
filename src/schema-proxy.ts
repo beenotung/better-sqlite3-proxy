@@ -9,6 +9,7 @@ import {
 } from './extension'
 import { parseCreateTable } from 'quick-erd/dist/db/sqlite-parser'
 import { toSqliteTimestamp } from './helpers'
+import { filterToKey, notNullPlaceholder } from './internal'
 
 export type TableField = string | RelationField
 
@@ -201,7 +202,7 @@ export function proxySchema<Dict extends { [table: string]: object[] }>(
     let select_id = db.prepare(/* sql */ `select id from "${table}"`).pluck()
 
     function* iterator() {
-      const ids = select_id.all()
+      const ids = select_id.all() as number[]
       const n = ids.length
       let i: number
       for (i = 0; i < n; i++) {
@@ -212,7 +213,7 @@ export function proxySchema<Dict extends { [table: string]: object[] }>(
     function forEach(
       callbackfn: (value: Row<Name>, index: number, array: Row<Name>[]) => void,
     ): void {
-      const ids = select_id.all()
+      const ids = select_id.all() as number[]
       const n = ids.length
       let i: number
       let id: number
@@ -225,7 +226,7 @@ export function proxySchema<Dict extends { [table: string]: object[] }>(
     function map<U>(
       callbackfn: (value: Row<Name>, index: number, array: Row<Name>[]) => U,
     ): U[] {
-      const results = select_id.all()
+      const results = select_id.all() as any[]
       const n = results.length
       let i: number
       let id: number
@@ -243,7 +244,7 @@ export function proxySchema<Dict extends { [table: string]: object[] }>(
         array: Row<Name>[],
       ) => boolean,
     ): Row<Name>[] {
-      const ids = select_id.all()
+      const ids = select_id.all() as number[]
       const n = ids.length
       const results: Row<Name>[] = []
       let i: number
@@ -258,6 +259,7 @@ export function proxySchema<Dict extends { [table: string]: object[] }>(
       return results
     }
 
+    let slice_0 = db.prepare(/* sql */ `select id from "${table}"`).pluck()
     let slice_1 = db
       .prepare(/* sql */ `select id from "${table}" where id >= :start`)
       .pluck()
@@ -268,12 +270,13 @@ export function proxySchema<Dict extends { [table: string]: object[] }>(
       .pluck()
     function slice(start?: number, end?: number): Row<Name>[] {
       let args = arguments.length
-      const results =
+      const results = (
         args == 0
-          ? select_all.all()
+          ? slice_0.all()
           : args == 1
           ? slice_1.all({ start })
           : slice_2.all({ start, end })
+      ) as any[]
       const n = results.length
       let i: number
       let id: number
@@ -290,7 +293,7 @@ export function proxySchema<Dict extends { [table: string]: object[] }>(
       for (i = 0; i < arguments.length; i++) {
         last_id = insert_run(arguments[i])
       }
-      return last_id || select_last_id.get()
+      return last_id || (select_last_id.get() as number)
     }
 
     let find_dict: Record<string, Statement> = {}
@@ -299,40 +302,17 @@ export function proxySchema<Dict extends { [table: string]: object[] }>(
       if (keys.length === 0) {
         throw new Error('find() expects non-empty filter')
       }
-      let key = keys
-        .map(key => {
-          const value = filter[key] as unknown
-          switch (value) {
-            case null:
-              return `${key}(null)`
-            case true:
-              filter[key] = 1 as any
-              break
-            case false:
-              filter[key] = 0 as any
-              break
-            default:
-              if (value instanceof Date)
-                filter[key] = toSqliteTimestamp(value) as any
-              break
-          }
-          return key
-        })
-        .join('|')
+      let key = filterToKey(filter)
       let select =
         find_dict[key] ||
         (find_dict[key] = db
           .prepare(
             /* sql */ `select id from "${table}" where ${keys
-              .map(key =>
-                filter[key] === null
-                  ? `"${key}" is null`
-                  : `"${key}" = :${key}`,
-              )
+              .map(key => toWhereCondition(filter, key))
               .join(' and ')} limit 1`,
           )
           .pluck())
-      let id = select.get(filter)
+      let id = select.get(filter) as number
       return id ? proxyRow(id) : undefined
     }
 
@@ -342,40 +322,18 @@ export function proxySchema<Dict extends { [table: string]: object[] }>(
       if (keys.length === 0) {
         throw new Error('filter() expects non-empty filter')
       }
-      let key = keys
-        .map(key => {
-          const value = filter[key] as unknown
-          switch (value) {
-            case null:
-              return `${key}(null)`
-            case true:
-              filter[key] = 1 as any
-              break
-            case false:
-              filter[key] = 0 as any
-              break
-            default:
-              if (value instanceof Date)
-                filter[key] = toSqliteTimestamp(value) as any
-              break
-          }
-          return key
-        })
-        .join('|')
+      let key = filterToKey(filter)
       let select =
         filter_dict[key] ||
         (filter_dict[key] = db
           .prepare(
             /* sql */ `select id from "${table}" where ${keys
-              .map(key =>
-                filter[key] === null
-                  ? `"${key}" is null`
-                  : `"${key}" = :${key}`,
-              )
+              .map(key => toWhereCondition(filter, key))
               .join(' and ')}`,
           )
           .pluck())
-      return select.all(filter).map(proxyRow)
+      let rows = select.all(filter) as number[]
+      return rows.map(proxyRow)
     }
 
     let count_dict: Record<string, Statement> = {}
@@ -384,46 +342,23 @@ export function proxySchema<Dict extends { [table: string]: object[] }>(
       if (keys.length === 0) {
         throw new Error('count() expects non-empty filter')
       }
-      let key = keys
-        .map(key => {
-          const value = filter[key] as unknown
-          switch (value) {
-            case null:
-              return `${key}(null)`
-            case true:
-              filter[key] = 1 as any
-              break
-            case false:
-              filter[key] = 0 as any
-              break
-            default:
-              if (value instanceof Date)
-                filter[key] = toSqliteTimestamp(value) as any
-              break
-          }
-          return key
-        })
-        .join('|')
+      let key = filterToKey(filter)
       let select =
         count_dict[key] ||
         (count_dict[key] = db
           .prepare(
             /* sql */ `select count(*) from "${table}" where ${keys
-              .map(key =>
-                filter[key] === null
-                  ? `"${key}" is null`
-                  : `"${key}" = :${key}`,
-              )
+              .map(key => toWhereCondition(filter, key))
               .join(' and ')}`,
           )
           .pluck())
-      return select.get(filter)
+      return select.get(filter) as number
     }
 
     let proxyRow = <Name extends TableName>(id: number): Row<Name> => {
       let proxy = rowProxyMap.get(id)
       if (proxy) {
-        return rowProxyMap.get(id)!
+        return proxy
       }
       proxy = new Proxy({} as Row<Name>, {
         has(target, p) {
@@ -466,8 +401,9 @@ export function proxySchema<Dict extends { [table: string]: object[] }>(
             if (relationFieldNames.includes(p)) {
               let relationField = relationFieldDict[p]
               let proxyRow = tableProxyRowDict[relationField.table]
-              let foreign_id =
-                select_one_column_dict[relationField.field].get(id)
+              let foreign_id = select_one_column_dict[relationField.field].get(
+                id,
+              ) as number
               return proxyRow(foreign_id)
             }
           }
@@ -594,7 +530,7 @@ export function proxySchema<Dict extends { [table: string]: object[] }>(
           .prepare(/* sql */ `select sql from sqlite_master where name = ?`)
           .pluck()
       }
-      let sql = select_create_table.get(table)
+      let sql = select_create_table.get(table) as string
       if (!sql) throw new Error(`Table "${table}" doest not exist`)
       _tableFields.push(...parseColumnNames(sql))
     }
@@ -622,4 +558,13 @@ function toSqliteValue(value: unknown) {
       if (value instanceof Date) return toSqliteTimestamp(value)
       return value
   }
+}
+
+function toWhereCondition<Filter>(filter: Filter, key: string & keyof Filter) {
+  let value = filter[key]
+  return value === null
+    ? `"${key}" is null`
+    : value === notNullPlaceholder
+    ? `"${key}" is not null`
+    : `"${key}" = :${key}`
 }
