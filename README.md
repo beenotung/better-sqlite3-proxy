@@ -17,7 +17,7 @@ Powered by [better-sqlite3](https://github.com/WiseLibs/better-sqlite3)🔋
 - [x] auto convert column values into sqlite3 format
   - [x] convert `true`/`false` to `1`/`0`
   - [x] convert `Date` instance to GMT timestamp
-  - [x] support searching nullable columns
+  - [x] support searching `null` / `not null` columns
 
 ### Array Operations Mapping
 
