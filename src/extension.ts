@@ -32,6 +32,17 @@ export function filter<T extends object>(table: T[], filter: Partial<T>): T[] {
   )
 }
 
+export let delSymbol = Symbol('del')
+
+export function del<T extends object>(table: T[], partial: Partial<T>) {
+  if (delSymbol in table) {
+    return (table as any)[delSymbol](partial)
+  }
+  throw new Error(
+    'expect table proxy, but got: ' + Object.prototype.toString.call(table),
+  )
+}
+
 export let countSymbol = Symbol('count')
 
 export function count<T extends object>(table: T[], partial: Partial<T>) {

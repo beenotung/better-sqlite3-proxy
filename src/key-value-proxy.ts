@@ -6,6 +6,7 @@ import {
   findSymbol,
   unProxySymbol,
   updateSymbol,
+  delSymbol,
 } from './extension'
 import { filterToKey, notNullPlaceholder } from './internal'
 
@@ -206,6 +207,23 @@ create table if not exists "${table}" (
       return rows.map(decode)
     }
 
+    let del_dict: Record<string, Statement> = {}
+    function del(filter: Partial<Row<Name>>): number {
+      let keys = Object.keys(filter) as Array<string & keyof typeof filter>
+      if (keys.length === 0) {
+        throw new Error('del() expects non-empty filter')
+      }
+      let key = filterToKey(filter)
+      let select =
+        del_dict[key] ||
+        (del_dict[key] = db.prepare(
+          /* sql */ `delete from "${table}" where ${keys
+            .map(key => toWhereCondition(filter, key))
+            .join(' and ')}`,
+        ))
+      return select.run(filter).changes
+    }
+
     let count_dict: Record<string, Statement> = {}
     function count(filter: Partial<Row<Name>>): number {
       let keys = Object.keys(filter) as Array<string & keyof typeof filter>
@@ -239,6 +257,7 @@ create table if not exists "${table}" (
           case unProxySymbol:
           case findSymbol:
           case filterSymbol:
+          case delSymbol:
           case countSymbol:
           case updateSymbol:
           case Symbol.iterator:
@@ -285,6 +304,8 @@ create table if not exists "${table}" (
             return find
           case filterSymbol:
             return filter
+          case delSymbol:
+            return del
           case countSymbol:
             return count
           case updateSymbol:

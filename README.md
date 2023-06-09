@@ -29,7 +29,8 @@ Powered by [better-sqlite3](https://github.com/WiseLibs/better-sqlite3)🔋
 | find(array, filter)      | select where filter limit 1           |
 | filter(array, filter)    | select where filter                   |
 | count(array, filter)     | select count where filter             |
-| delete array[id]         | delete                                |
+| delete array[id]         | delete where id                       |
+| del(array, filter)       | delete where filter                   |
 | array.length = length    | delete where id > length              |
 | array.slice(start, end)  | select where id >= start and id < end |
 

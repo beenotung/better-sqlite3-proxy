@@ -6,6 +6,7 @@ import {
   filterSymbol,
   countSymbol,
   updateSymbol,
+  delSymbol,
 } from './extension'
 import { parseCreateTable } from 'quick-erd/dist/db/sqlite-parser'
 import { toSqliteTimestamp } from './helpers'
@@ -336,6 +337,23 @@ export function proxySchema<Dict extends { [table: string]: object[] }>(
       return rows.map(proxyRow)
     }
 
+    let del_dict: Record<string, Statement> = {}
+    function del(filter: Partial<Row<Name>>): number {
+      let keys = Object.keys(filter) as Array<string & keyof typeof filter>
+      if (keys.length === 0) {
+        throw new Error('del() expects non-empty filter')
+      }
+      let key = filterToKey(filter)
+      let del =
+        del_dict[key] ||
+        (del_dict[key] = db.prepare(
+          /* sql */ `delete from "${table}" where ${keys
+            .map(key => toWhereCondition(filter, key))
+            .join(' and ')}`,
+        ))
+      return del.run(filter).changes
+    }
+
     let count_dict: Record<string, Statement> = {}
     function count(filter: Partial<Row<Name>>): number {
       let keys = Object.keys(filter) as Array<string & keyof typeof filter>
@@ -421,6 +439,7 @@ export function proxySchema<Dict extends { [table: string]: object[] }>(
           case unProxySymbol:
           case findSymbol:
           case filterSymbol:
+          case delSymbol:
           case countSymbol:
           case updateSymbol:
           case Symbol.iterator:
@@ -466,6 +485,8 @@ export function proxySchema<Dict extends { [table: string]: object[] }>(
             return find
           case filterSymbol:
             return filter
+          case delSymbol:
+            return del
           case countSymbol:
             return count
           case updateSymbol:

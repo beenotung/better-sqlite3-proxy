@@ -2,7 +2,15 @@ import { DBInstance, newDB } from 'better-sqlite3-schema'
 import { expect } from 'chai'
 import { join } from 'path'
 import { proxyKeyValue } from '../src/key-value-proxy'
-import { count, filter, find, notNull, unProxy, update } from '../src/extension'
+import {
+  count,
+  del,
+  filter,
+  find,
+  notNull,
+  unProxy,
+  update,
+} from '../src/extension'
 import { existsSync, unlinkSync } from 'fs'
 import { fake } from 'sinon'
 
@@ -112,6 +120,22 @@ context('proxyKeyValue TestSuit', () => {
       { id: 1, user_id: 1, content: 'Hello from Alice' },
       { id: 3, user_id: 1, content: 'Hi Bob' },
     ])
+  })
+  it('should delete records by any columns', () => {
+    proxy.log.length = 0
+    expect(proxy.log.length).to.equals(0)
+    proxy.log[1] = { remark: 'test 1' }
+    proxy.log[2] = { remark: 'test 2' }
+    expect(proxy.log.length).to.equals(2)
+
+    del(proxy.log, { remark: 'test 1' })
+    expect(proxy.log.length).to.equals(1)
+
+    del(proxy.log, { remark: 'test 1' })
+    expect(proxy.log.length).to.equals(1)
+
+    del(proxy.log, { remark: 'test 2' })
+    expect(proxy.log.length).to.equals(0)
   })
   it('should count records by any columns', () => {
     expect(count(proxy.post, { user_id: 1 })).to.equals(2)
