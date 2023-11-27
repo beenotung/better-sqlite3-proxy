@@ -1,6 +1,8 @@
 import { newDB } from 'better-sqlite3-schema'
 import { unProxy } from '../src/extension'
 import { proxySchema } from '../src/schema-proxy'
+import { expect } from 'chai'
+import { fromSqliteTimestamp } from '../src/helpers'
 
 let db = newDB({
   path: 'data/update-test.db',
@@ -36,12 +38,22 @@ let proxy = proxySchema<DBProxy>({
   },
 })
 
-console.log('0', unProxy(proxy.user[1]))
-
-proxy.user[1] = { username: 'Alice' }
-console.log('1', unProxy(proxy.user[1]))
+delete proxy.user[1]
+proxy.user[1] = { username: 'Alice0' }
+let row = unProxy(proxy.user[1])
+let time0 = Date.now()
+assertDate(fromSqliteTimestamp(row.created_at!).getTime(), time0)
+assertDate(fromSqliteTimestamp(row.updated_at!).getTime(), time0)
 
 setTimeout(() => {
-  proxy.user[1].username = 'Alice2'
-  console.log('2', unProxy(proxy.user[1]))
+  proxy.user[1].username = 'Alice1'
+  row = unProxy(proxy.user[1])
+  let time1 = Date.now()
+  assertDate(fromSqliteTimestamp(row.created_at!).getTime(), time0)
+  assertDate(fromSqliteTimestamp(row.updated_at!).getTime(), time1)
+  console.log('[passed] test/update-time.ts')
 }, 2000)
+
+function assertDate(a: number, b: number) {
+  expect(Math.abs(a - b)).lessThanOrEqual(800)
+}
