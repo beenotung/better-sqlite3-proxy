@@ -18,6 +18,10 @@ Powered by [better-sqlite3](https://github.com/WiseLibs/better-sqlite3)🔋
   - [x] convert `true`/`false` to `1`/`0`
   - [x] convert `Date` instance to GMT timestamp
   - [x] support searching `null` / `not null` columns
+- [x] extra helper functions:
+  - [x] toSqliteTimestamp(date): string
+  - [x] fromSqliteTimestamp(string_or_date): Date
+  - [x] seedRow(table, filter, extra?)
 
 ### Array Operations Mapping
 
