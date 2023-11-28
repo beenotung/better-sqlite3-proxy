@@ -21,7 +21,7 @@ Powered by [better-sqlite3](https://github.com/WiseLibs/better-sqlite3)🔋
 - [x] extra helper functions:
   - [x] toSqliteTimestamp(date): string
   - [x] fromSqliteTimestamp(string_or_date): Date
-  - [x] seedRow(table, filter, extra?)
+  - [x] seedRow(table, filter, extra?): number
 
 ### Array Operations Mapping
 

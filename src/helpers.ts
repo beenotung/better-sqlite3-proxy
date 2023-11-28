@@ -12,15 +12,15 @@ export function fromSqliteTimestamp(timestamp: string | Date): Date {
     : timestamp
 }
 
-export function seedRow<T extends object, Filter extends Partial<T>>(
-  table: T[],
-  filter: Filter,
-  extra?: Omit<T, keyof Filter>,
-) {
+export function seedRow<
+  T extends { id?: number | null },
+  Filter extends Partial<T>,
+>(table: T[], filter: Filter, extra?: Omit<T, keyof Filter>): number {
   let row = find(table, filter)
   if (row) {
     if (extra) Object.assign(row, extra)
+    return row.id!
   } else {
-    table.push({ ...filter, ...extra } as any as T)
+    return table.push({ ...filter, ...extra } as any as T)
   }
 }
