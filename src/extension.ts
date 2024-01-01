@@ -1,4 +1,4 @@
-export let unProxySymbol = Symbol('unProxy')
+export let unProxySymbol = Symbol.for('unProxy')
 
 export function unProxy<T extends object>(row: T): T {
   if (unProxySymbol in row) {
@@ -7,7 +7,7 @@ export function unProxy<T extends object>(row: T): T {
   return row
 }
 
-export let findSymbol = Symbol('find')
+export let findSymbol = Symbol.for('find')
 
 export function find<T extends object>(
   table: T[],
@@ -21,7 +21,7 @@ export function find<T extends object>(
   )
 }
 
-export let filterSymbol = Symbol('filter')
+export let filterSymbol = Symbol.for('filter')
 
 export function filter<T extends object>(table: T[], filter: Partial<T>): T[] {
   if (filterSymbol in table) {
@@ -32,7 +32,7 @@ export function filter<T extends object>(table: T[], filter: Partial<T>): T[] {
   )
 }
 
-export let delSymbol = Symbol('del')
+export let delSymbol = Symbol.for('del')
 
 export function del<T extends object>(table: T[], partial: Partial<T>) {
   if (delSymbol in table) {
@@ -43,7 +43,7 @@ export function del<T extends object>(table: T[], partial: Partial<T>) {
   )
 }
 
-export let countSymbol = Symbol('count')
+export let countSymbol = Symbol.for('count')
 
 export function count<T extends object>(table: T[], partial: Partial<T>) {
   if (countSymbol in table) {
@@ -54,7 +54,7 @@ export function count<T extends object>(table: T[], partial: Partial<T>) {
   )
 }
 
-export let updateSymbol = Symbol('update')
+export let updateSymbol = Symbol.for('update')
 
 export function update<T extends object>(
   table: T[],
@@ -69,4 +69,4 @@ export function update<T extends object>(
   )
 }
 
-export let notNull = Symbol('not null') as any as null
+export let notNull = Symbol.for('not null') as any as null
