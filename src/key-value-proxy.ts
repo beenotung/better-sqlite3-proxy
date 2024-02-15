@@ -243,12 +243,13 @@ create table if not exists "${table}" (
       return select.get(filter) as number
     }
 
-    function partialUpdate(id: number, partial: Partial<Row<Name>>) {
+    function partialUpdate(id: number, partial: Partial<Row<Name>>): number {
       if (count_by_id.get(id) == 1) {
         let value = decode(select_by_id.get(id) as string)
         let json = encode({ ...value, ...partial })
-        update.run({ id, value: json })
+        return update.run({ id, value: json }).changes
       }
+      return 0
     }
 
     let proxy = new Proxy([] as unknown[] as Table, {

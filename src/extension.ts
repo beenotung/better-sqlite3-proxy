@@ -34,7 +34,10 @@ export function filter<T extends object>(table: T[], filter: Partial<T>): T[] {
 
 export let delSymbol = Symbol.for('del')
 
-export function del<T extends object>(table: T[], partial: Partial<T>) {
+/**
+ * @returns number of deleted rows
+ */
+export function del<T extends object>(table: T[], partial: Partial<T>): number {
   if (delSymbol in table) {
     return (table as any)[delSymbol](partial)
   }
@@ -45,7 +48,10 @@ export function del<T extends object>(table: T[], partial: Partial<T>) {
 
 export let countSymbol = Symbol.for('count')
 
-export function count<T extends object>(table: T[], partial: Partial<T>) {
+export function count<T extends object>(
+  table: T[],
+  partial: Partial<T>,
+): number {
   if (countSymbol in table) {
     return (table as any)[countSymbol](partial)
   }
@@ -56,11 +62,14 @@ export function count<T extends object>(table: T[], partial: Partial<T>) {
 
 export let updateSymbol = Symbol.for('update')
 
+/**
+ * @returns number of updated rows
+ */
 export function update<T extends object>(
   table: T[],
   id: number,
   partial: Partial<T>,
-) {
+): number {
   if (updateSymbol in table) {
     return (table as any)[updateSymbol](id, partial)
   }

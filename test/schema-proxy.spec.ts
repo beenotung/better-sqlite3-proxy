@@ -232,8 +232,17 @@ drop table "order";
     del(proxy.log, { remark: 'test 2' })
     expect(proxy.log.length).to.equals(0)
   })
+  it('should return number of deleted rows', () => {
+    let remark = 'to-be-deleted'
+    proxy.log.push({ remark })
+    proxy.log.push({ remark })
+    proxy.log.push({ remark })
+    expect(del(proxy.log, { remark })).to.equals(3)
+    expect(del(proxy.log, { remark })).to.equals(0)
+  })
   it('should count records by any columns', () => {
     expect(count(proxy.post, { user_id: 1 })).to.equals(2)
+    expect(count(proxy.post, { user_id: 101 })).to.equals(0)
   })
   context('null condition', () => {
     before(() => {
@@ -442,5 +451,9 @@ drop table "order";
     update(proxy.user, 1, { username: 'alice', is_admin: false })
     expect(user.username).to.equals('alice')
     expect(user.is_admin).to.be.equals(0)
+  })
+  it('should return number of updated rows', () => {
+    expect(update(proxy.user, 1, { is_admin: false })).to.equals(1)
+    expect(update(proxy.user, 101, { is_admin: false })).to.equals(0)
   })
 })

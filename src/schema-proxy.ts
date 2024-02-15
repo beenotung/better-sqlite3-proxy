@@ -99,7 +99,7 @@ export function proxySchema<Dict extends { [table: string]: object[] }>(
     let update_run_without_updated_at = (
       id: number,
       row: Record<string, any>,
-    ) => {
+    ): number => {
       let params: Record<string, any> = { id }
       let keys: string[] = []
       for (let key in row) {
@@ -112,7 +112,7 @@ export function proxySchema<Dict extends { [table: string]: object[] }>(
           params[field] = row[key].id
         }
       }
-      if (keys.length == 0) return
+      if (keys.length == 0) return 0
       let key = keys.join('|')
       let update =
         update_dict[key] ||
@@ -121,9 +121,12 @@ export function proxySchema<Dict extends { [table: string]: object[] }>(
             key => `"${key}" = :${key}`,
           )} where id = :id`,
         ))
-      update.run(params)
+      return update.run(params).changes
     }
-    let update_run_with_updated_at = (id: number, row: Record<string, any>) => {
+    let update_run_with_updated_at = (
+      id: number,
+      row: Record<string, any>,
+    ): number => {
       let params: Record<string, any> = { id }
       let keys: string[] = []
       for (let key in row) {
@@ -137,7 +140,7 @@ export function proxySchema<Dict extends { [table: string]: object[] }>(
           params[field] = row[key].id
         }
       }
-      if (keys.length == 0) return
+      if (keys.length == 0) return 0
       let key = keys.join('|')
       let update =
         update_dict[key] ||
@@ -146,7 +149,7 @@ export function proxySchema<Dict extends { [table: string]: object[] }>(
             key => `"${key}" = :${key}`,
           )}, updated_at = current_timestamp where id = :id`,
         ))
-      update.run(params)
+      return update.run(params).changes
     }
     let update_run =
       auto_update_timestamp && tableFieldNames.includes('updated_at')
