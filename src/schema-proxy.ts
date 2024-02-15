@@ -278,8 +278,8 @@ export function proxySchema<Dict extends { [table: string]: object[] }>(
         args == 0
           ? slice_0.all()
           : args == 1
-          ? slice_1.all({ start })
-          : slice_2.all({ start, end })
+            ? slice_1.all({ start })
+            : slice_2.all({ start, end })
       ) as any[]
       const n = results.length
       let i: number
@@ -589,6 +589,6 @@ function toWhereCondition<Filter>(filter: Filter, key: string & keyof Filter) {
   return value === null
     ? `"${key}" is null`
     : value === notNullPlaceholder
-    ? `"${key}" is not null`
-    : `"${key}" = :${key}`
+      ? `"${key}" is not null`
+      : `"${key}" = :${key}`
 }

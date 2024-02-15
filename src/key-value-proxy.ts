@@ -157,8 +157,8 @@ create table if not exists "${table}" (
         args == 0
           ? slice_0.all()
           : args == 1
-          ? slice_1.all({ start })
-          : slice_2.all({ start, end })
+            ? slice_1.all({ start })
+            : slice_2.all({ start, end })
       ) as any[]
       const n = results.length
       let i: number
@@ -363,6 +363,6 @@ function toWhereCondition<Filter>(filter: Filter, key: string & keyof Filter) {
   return value === null
     ? `json_extract(value,'$.${key}') is null`
     : value === notNullPlaceholder
-    ? `json_extract(value,'$.${key}') is not null`
-    : `json_extract(value,'$.${key}') = :${key}`
+      ? `json_extract(value,'$.${key}') is not null`
+      : `json_extract(value,'$.${key}') = :${key}`
 }
