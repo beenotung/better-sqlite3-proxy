@@ -7,7 +7,7 @@ Powered by [better-sqlite3](https://github.com/WiseLibs/better-sqlite3)🔋
 
 ## Features
 
-- auto run sqlite statements, supports:
+- [x] auto run sqlite statements, supports:
   - [x] create table (only for key-value proxy)
   - [x] select
   - [x] insert
@@ -19,9 +19,9 @@ Powered by [better-sqlite3](https://github.com/WiseLibs/better-sqlite3)🔋
   - [x] convert `Date` instance to GMT timestamp
   - [x] support searching `null` / `not null` columns
 - [x] extra helper functions:
-  - [x] toSqliteTimestamp(date): string
-  - [x] fromSqliteTimestamp(string_or_date): Date
-  - [x] seedRow(table, filter, extra?): number
+  - [x] toSqliteTimestamp (date): string
+  - [x] fromSqliteTimestamp (string_or_date): Date
+  - [x] seedRow (table, filter, extra?): number
 
 ### Array Operations Mapping
 
