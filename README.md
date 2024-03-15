@@ -7,6 +7,7 @@ Powered by [better-sqlite3](https://github.com/WiseLibs/better-sqlite3)🔋
 
 ## Features
 
+- [x] Type safety support for each table
 - [x] auto run sqlite statements, supports:
   - [x] create table (only for key-value proxy)
   - [x] select
