@@ -1,6 +1,6 @@
 {
   "name": "better-sqlite3-proxy",
-  "version": "2.6.0",
+  "version": "2.6.1",
   "description": "Efficiently proxy sqlite tables and access data as typical array of objects.",
   "keywords": [
     "sqlite",
