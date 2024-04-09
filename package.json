@@ -38,7 +38,7 @@
     "@beenotung/better-sqlite3-helper": "^4.1.2",
     "better-sqlite3": "^9.4.5",
     "better-sqlite3-schema": "^3.1.4",
-    "quick-erd": "^4.21.0"
+    "quicd-erd": "^4.21.1"
   },
   "devDependencies": {
     "@types/better-sqlite3": "^7.6.9",
