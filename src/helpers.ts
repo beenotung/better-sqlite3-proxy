@@ -39,16 +39,20 @@ export function upsert<Table extends { id?: number | null }>(
 export function getId<
   Table extends { id?: number | null },
   Key extends keyof Table,
->(table: Table[], key: Key, value: null): null
+>(table: Table[], key: Key, value: null | undefined): null
 export function getId<
   Table extends { id?: number | null },
   Key extends keyof Table,
->(table: Table[], key: Key, value: Table[Key] | null): number
+>(table: Table[], key: Key, value: Table[Key]): number
 export function getId<
   Table extends { id?: number | null },
   Key extends keyof Table,
->(table: Table[], key: Key, value: Table[Key] | null): number | null {
-  if (value == null) return null
+>(
+  table: Table[],
+  key: Key,
+  value: Table[Key] | null | undefined,
+): number | null {
+  if (value == null || value == undefined) return null
   let filter = { [key]: value } as any
   return upsert(table, key, filter)
 }
