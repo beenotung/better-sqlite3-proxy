@@ -24,3 +24,31 @@ export function seedRow<
     return table.push({ ...filter, ...extra } as any as T)
   }
 }
+
+export function upsert<Table extends { id?: number | null }>(
+  table: Table[],
+  key: keyof Table,
+  data: Table,
+): number {
+  let filter = { [key]: data[key] } as Partial<Table>
+  let row = find(table, filter)
+  if (row) return row.id!
+  return table.push(data)
+}
+
+export function getId<
+  Table extends { id?: number | null },
+  Key extends keyof Table,
+>(table: Table[], key: Key, value: null): null
+export function getId<
+  Table extends { id?: number | null },
+  Key extends keyof Table,
+>(table: Table[], key: Key, value: Table[Key] | null): number
+export function getId<
+  Table extends { id?: number | null },
+  Key extends keyof Table,
+>(table: Table[], key: Key, value: Table[Key] | null): number | null {
+  if (value == null) return null
+  let filter = { [key]: value } as any
+  return upsert(table, key, filter)
+}

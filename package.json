@@ -35,7 +35,7 @@
     "test": "npm run mocha && npm run type-check"
   },
   "dependencies": {
-    "@beenotung/better-sqlite3-helper": "^4.1.4",
+    "@beenotung/better-sqlite3-helper": "^4.1.5",
     "better-sqlite3": "^10.0.0",
     "better-sqlite3-schema": "^3.1.5",
     "quick-erd": "^4.21.1"

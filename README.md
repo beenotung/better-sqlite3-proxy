@@ -23,6 +23,8 @@ Powered by [better-sqlite3](https://github.com/WiseLibs/better-sqlite3)🔋
   - [x] toSqliteTimestamp (date): string
   - [x] fromSqliteTimestamp (string_or_date): Date
   - [x] seedRow (table, filter, extra?): number
+  - [x] upsert (table, key, date)
+  - [x] getId (table, key, value)
 
 ### Array Operations Mapping
 
