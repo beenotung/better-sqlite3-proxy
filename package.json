@@ -35,21 +35,21 @@
     "test": "npm run mocha && npm run type-check"
   },
   "dependencies": {
-    "@beenotung/better-sqlite3-helper": "^4.1.5",
-    "better-sqlite3": "^10.0.0",
-    "better-sqlite3-schema": "^3.1.5",
-    "quick-erd": "^4.21.1"
+    "@beenotung/better-sqlite3-helper": "^4.1.6",
+    "better-sqlite3": "^10.1.0",
+    "better-sqlite3-schema": "^3.1.6",
+    "quick-erd": "^4.21.4"
   },
   "devDependencies": {
     "@types/better-sqlite3": "^7.6.10",
     "@types/chai": "^4.3.16",
     "@types/integer": "^4.0.3",
     "@types/mocha": "^10.0.6",
-    "@types/node": "^20.12.12",
+    "@types/node": "^20.14.2",
     "@types/sinon": "^17.0.3",
     "chai": "^4.4.1",
     "mocha": "^10.4.0",
-    "prettier": "^3.2.5",
+    "prettier": "^3.3.2",
     "rimraf": "^5.0.7",
     "sinon": "^17.0.1",
     "ts-mocha": "^10.0.0",
