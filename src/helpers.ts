@@ -12,6 +12,25 @@ export function fromSqliteTimestamp(timestamp: string | Date): Date {
     : timestamp
 }
 
+export function getTimes<
+  T extends {
+    id?: number
+    created_at?: string | null
+    updated_at?: string | null
+  },
+  Field extends keyof T = 'created_at' | 'updated_at',
+>(
+  row: T,
+  fields: Field[] = ['created_at', 'updated_at'] as Field[],
+): Record<Field, Date | null> {
+  let times = {} as Record<Field, Date | null>
+  for (let field of fields) {
+    let time = (row as any)[field]
+    times[field] = time ? fromSqliteTimestamp(time) : null
+  }
+  return times
+}
+
 export function seedRow<
   T extends { id?: number | null },
   Filter extends Partial<T>,

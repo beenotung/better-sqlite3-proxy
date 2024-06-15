@@ -13,6 +13,7 @@ import {
 } from '../src/extension'
 import { existsSync, unlinkSync } from 'fs'
 import { fake } from 'sinon'
+import { getTimes } from '../src/helpers'
 
 export type DBProxy = {
   user: User[]
@@ -30,6 +31,7 @@ export type Post = {
   user_id: number
   content: string
   created_at?: string
+  updated_at?: string
   author?: User
   delete_time?: string | Date | null
 }
@@ -73,6 +75,7 @@ create table if not exists post (
 , user_id integer not null references user (id)
 , content text not null
 , created_at timestamp not null default current_timestamp
+, updated_at timestamp
 , delete_time timestamp
 );
 -- Down
@@ -455,5 +458,31 @@ drop table "order";
   it('should return number of updated rows', () => {
     expect(update(proxy.user, 1, { is_admin: false })).to.equals(1)
     expect(update(proxy.user, 101, { is_admin: false })).to.equals(0)
+  })
+  context('getTimes()', () => {
+    before(() => {
+      proxy.user[1] = { username: 'alice' }
+      proxy.post[1] = { user_id: 1, content: 'sample post' }
+      proxy.post[2] = { user_id: 1, content: 'updated post', updated_at: 't1' }
+      proxy.post[3] = {
+        user_id: 1,
+        content: 'deleted post',
+        updated_at: 't2',
+        delete_time: 't3',
+      }
+    })
+    it('should get created_at and updated_at by default', () => {
+      let row = proxy.post[3]
+      let times = getTimes(row)
+      expect(Object.keys(times)).deep.equals(['created_at', 'updated_at'])
+      expect(times.created_at).not.null
+      expect(times.updated_at).not.null
+    })
+    it('should only get specified field', () => {
+      let row = proxy.post[3]
+      let times = getTimes(row, ['delete_time'])
+      expect(Object.keys(times)).deep.equals(['delete_time'])
+      expect(times.delete_time).not.null
+    })
   })
 })
