@@ -3,6 +3,7 @@ import { expect } from 'chai'
 import { join } from 'path'
 import { proxySchema } from '../src/schema-proxy'
 import {
+  clearCache,
   count,
   del,
   filter,
@@ -484,5 +485,55 @@ drop table "order";
       expect(Object.keys(times)).deep.equals(['delete_time'])
       expect(times.delete_time).not.null
     })
+  })
+})
+
+context('schema proxy memory test', () => {
+  let db = newDB({
+    memory: true,
+    migrate: {
+      migrations: [
+        /* sql */ `
+-- Up
+create table log (
+  id integer primary key
+, remark text
+);
+-- Down
+drop table log;
+      `,
+      ],
+    },
+  })
+  let proxy = proxySchema<{ log: Log[] }>(db, { log: [] })
+  it('should not run out of memory due to too much row proxy cache', () => {
+    let n = 1_000_000
+    for (let i = 1; i < n; i++) {
+      proxy.log[i] = { remark: 'remark ' + i }
+      proxy.log[i]
+      if (i % 100_000 == 0) {
+        clearCache(proxy)
+        let rss = process.memoryUsage().rss
+        let averageSize = rss / i
+        if (averageSize < 360) {
+          return
+        }
+      }
+    }
+    let rss = process.memoryUsage().rss
+    let averageSize = rss / n
+    throw new Error(
+      `memory not freed? n=${n.toLocaleString()}, rss=${rss.toLocaleString()}, averageSize=${averageSize}`,
+    )
+  }).timeout(20 * 1000)
+  it('should not delete data from db after clearCache', () => {
+    delete proxy.log[1]
+    expect(proxy.log[1]).undefined
+
+    proxy.log[1] = { remark: 'remark 1' }
+    expect(proxy.log[1].remark).to.equal('remark 1')
+
+    clearCache(proxy)
+    expect(proxy.log[1].remark).to.equal('remark 1')
   })
 })

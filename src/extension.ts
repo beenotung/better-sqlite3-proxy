@@ -79,3 +79,15 @@ export function update<T extends object>(
 }
 
 export let notNull = Symbol.for('not null') as any as null
+
+export let clearCacheSymbol = Symbol.for('clearCache')
+
+export function clearCache(proxy: object) {
+  if (clearCacheSymbol in proxy) {
+    return (proxy as any)[clearCacheSymbol]()
+  }
+  throw new Error(
+    'expect table_dict or table proxy, but got: ' +
+      Object.prototype.toString.call(proxy),
+  )
+}

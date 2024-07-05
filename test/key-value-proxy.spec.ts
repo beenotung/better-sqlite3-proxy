@@ -3,6 +3,7 @@ import { expect } from 'chai'
 import { join } from 'path'
 import { proxyKeyValue } from '../src/key-value-proxy'
 import {
+  clearCache,
   count,
   del,
   filter,
@@ -298,5 +299,31 @@ context('proxyKeyValue TestSuit', () => {
   it('should return number of updated rows', () => {
     expect(update(proxy.user, 1, { is_admin: false })).to.equals(1)
     expect(update(proxy.user, 101, { is_admin: false })).to.equals(0)
+  })
+})
+
+context('key-value proxy memory test', () => {
+  let db = newDB({
+    memory: true,
+    migrate: false,
+  })
+  let proxy = proxyKeyValue<{ log: DBProxy['log'] }>(db)
+  it('should clearCache without runtime error', () => {
+    let n = 10
+    for (let i = 1; i < n; i++) {
+      proxy.log[i] = { remark: 'remark ' + i }
+      proxy.log[i]
+    }
+    clearCache(proxy)
+  })
+  it('should not delete data from db after clearCache', () => {
+    delete proxy.log[1]
+    expect(proxy.log[1]).undefined
+
+    proxy.log[1] = { remark: 'remark 1' }
+    expect(proxy.log[1].remark).to.equal('remark 1')
+
+    clearCache(proxy)
+    expect(proxy.log[1].remark).to.equal('remark 1')
   })
 })

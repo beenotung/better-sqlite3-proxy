@@ -7,6 +7,8 @@ import {
   unProxySymbol,
   updateSymbol,
   delSymbol,
+  clearCacheSymbol,
+  clearCache,
 } from './extension'
 import { filterToKey, notNullPlaceholder } from './internal'
 
@@ -252,6 +254,10 @@ create table if not exists "${table}" (
       return 0
     }
 
+    function clearRowProxyCache() {
+      tableProxyMap.clear()
+    }
+
     let proxy = new Proxy([] as unknown[] as Table, {
       has(target, p) {
         switch (p) {
@@ -261,6 +267,7 @@ create table if not exists "${table}" (
           case delSymbol:
           case countSymbol:
           case updateSymbol:
+          case clearCacheSymbol:
           case Symbol.iterator:
           case 'length':
           case 'forEach':
@@ -311,6 +318,8 @@ create table if not exists "${table}" (
             return count
           case updateSymbol:
             return partialUpdate
+          case clearCacheSymbol:
+            return clearRowProxyCache
           case Symbol.iterator:
             return iterator
           case 'length':
@@ -348,8 +357,23 @@ create table if not exists "${table}" (
     tableProxyMap.set(table, proxy)
     return proxy
   }
+  function clearAllRowProxyCache() {
+    for (let table of tableProxyMap.values()) {
+      clearCache(table)
+    }
+  }
   return new Proxy({} as Dict, {
+    has(target, propertyKey) {
+      switch (propertyKey) {
+        case clearCacheSymbol:
+          return true
+      }
+      return Reflect.has(target, propertyKey)
+    },
     get(target, propertyKey, receiver) {
+      if (propertyKey == clearCacheSymbol) {
+        return clearAllRowProxyCache
+      }
       if (typeof propertyKey === 'string') {
         return proxyTable(propertyKey)
       }

@@ -7,6 +7,7 @@ import {
   notNull,
   unProxySymbol,
   updateSymbol,
+  clearCacheSymbol,
 } from '../src/extension'
 import * as lib from '../src/extension'
 
@@ -32,6 +33,7 @@ describe('avoid using unique symbols to tolerant different instance of package',
   test(countSymbol)
   test(updateSymbol)
   test(notNull as any)
+  test(clearCacheSymbol)
   it('should have tested all symbols', () => {
     expect(Array.from(allNames)).to.deep.equals(Array.from(testedNames))
   })

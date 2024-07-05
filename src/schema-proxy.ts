@@ -7,6 +7,8 @@ import {
   countSymbol,
   updateSymbol,
   delSymbol,
+  clearCacheSymbol,
+  clearCache,
 } from './extension'
 import { parseCreateTable } from 'quick-erd/dist/db/sqlite-parser'
 import { toSqliteTimestamp } from './helpers'
@@ -436,6 +438,10 @@ export function proxySchema<Dict extends { [table: string]: object[] }>(
     }
     tableProxyRowDict[table] = proxyRow
 
+    function clearRowProxyCache() {
+      rowProxyMap.clear()
+    }
+
     let proxy = new Proxy([] as unknown[] as Table, {
       has(target, p) {
         switch (p) {
@@ -445,6 +451,7 @@ export function proxySchema<Dict extends { [table: string]: object[] }>(
           case delSymbol:
           case countSymbol:
           case updateSymbol:
+          case clearCacheSymbol:
           case Symbol.iterator:
           case 'length':
           case 'push':
@@ -494,6 +501,8 @@ export function proxySchema<Dict extends { [table: string]: object[] }>(
             return count
           case updateSymbol:
             return update_run
+          case clearCacheSymbol:
+            return clearRowProxyCache
           case Symbol.iterator:
             return iterator
           case 'length':
@@ -535,6 +544,12 @@ export function proxySchema<Dict extends { [table: string]: object[] }>(
     return proxy
   }
 
+  function clearAllRowProxyCache() {
+    for (let table of tableProxyMap.values()) {
+      clearCache(table)
+    }
+  }
+
   let select_create_table: Statement | null = null
   let table_dict = {} as Dict
   for (let table in tableFields) {
@@ -560,6 +575,7 @@ export function proxySchema<Dict extends { [table: string]: object[] }>(
     }
     table_dict[table] = proxyTable(table, _tableFields, _relationFields)
   }
+  ;(table_dict as any)[clearCacheSymbol] = clearAllRowProxyCache
   return table_dict
 }
 
