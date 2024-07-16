@@ -209,6 +209,24 @@ create table if not exists "${table}" (
       return rows.map(decode)
     }
 
+    let filter_raw_dict: Record<string, Statement> = {}
+    function filter_raw(filter: Partial<Row<Name>>) {
+      let keys = Object.keys(filter) as Array<string & keyof typeof filter>
+      if (keys.length === 0) {
+        throw new Error('filter_raw() expects non-empty filter')
+      }
+      let key = filterToKey(filter)
+      let select =
+        filter_raw_dict[key] ||
+        (filter_raw_dict[key] = db.prepare(
+          /* sql */ `select id, value from "${table}" where ${keys
+            .map(key => toWhereCondition(filter, key))
+            .join(' and ')}`,
+        ))
+      let rows = select.all(filter) as { id: number; value: string }[]
+      return rows
+    }
+
     let del_dict: Record<string, Statement> = {}
     function del(filter: Partial<Row<Name>>): number {
       let keys = Object.keys(filter) as Array<string & keyof typeof filter>
@@ -245,13 +263,29 @@ create table if not exists "${table}" (
       return select.get(filter) as number
     }
 
-    function partialUpdate(id: number, partial: Partial<Row<Name>>): number {
-      if (count_by_id.get(id) == 1) {
-        let value = decode(select_by_id.get(id) as string)
-        let json = encode({ ...value, ...partial })
-        return update.run({ id, value: json }).changes
+    function partialUpdate(
+      id_or_filter: number | Partial<Row<Name>>,
+      partial: Partial<Row<Name>>,
+    ): number {
+      // update by id
+      if (typeof id_or_filter === 'number') {
+        if (count_by_id.get(id_or_filter) == 1) {
+          let value = decode(select_by_id.get(id_or_filter) as string)
+          let json = encode({ ...value, ...partial })
+          return update.run({ id: id_or_filter, value: json }).changes
+        }
+        return 0
       }
-      return 0
+
+      // update by filter
+      let changes = 0
+      let rows = filter_raw(id_or_filter)
+      for (let row of rows) {
+        let value = decode(row.value)
+        let json = encode({ ...value, ...partial })
+        changes += update.run({ id: row.id, value: json }).changes
+      }
+      return changes
     }
 
     function clearRowProxyCache() {

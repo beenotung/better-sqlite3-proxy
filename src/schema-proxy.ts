@@ -99,58 +99,77 @@ export function proxySchema<Dict extends { [table: string]: object[] }>(
 
     let update_dict: Record<string, Statement> = {}
     let update_run_without_updated_at = (
-      id: number,
+      id_or_filter: number | Record<string, any>,
       row: Record<string, any>,
     ): number => {
-      let params: Record<string, any> = { id }
-      let keys: string[] = []
+      let filter =
+        typeof id_or_filter === 'number' ? { id: id_or_filter } : id_or_filter
+
+      let params: Record<string, any> = { ...filter }
+
+      let filter_keys: string[] = []
+      for (let key in filter) {
+        filter_keys.push(key)
+        params['filter_' + key] = filter[key]
+      }
+
+      let update_keys: string[] = []
       for (let key in row) {
         if (tableFieldNames.includes(key)) {
-          keys.push(key)
-          params[key] = toSqliteValue(row[key])
+          update_keys.push(key)
+          params['update_' + key] = toSqliteValue(row[key])
         } else if (relationFieldNames.includes(key)) {
           let field = relationFieldDict[key].field
-          keys.push(field)
-          params[field] = row[key].id
+          update_keys.push(field)
+          params['update_' + field] = row[key].id
         }
       }
-      if (keys.length == 0) return 0
-      let key = keys.join('|')
+      if (update_keys.length == 0) return 0
+      let key = Object.keys(params).join('|')
       let update =
         update_dict[key] ||
-        (update_dict[key] = db.prepare(
-          /* sql */ `update "${table}" set ${keys.map(
-            key => `"${key}" = :${key}`,
-          )} where id = :id`,
-        ))
+        (update_dict[key] = db.prepare(/* sql */ `
+update "${table}"
+set ${update_keys.map(key => `"${key}" = :update_${key}`)}
+where ${filter_keys.map(key => `"${key}" = :filter_${key}`).join(' and ')}`))
       return update.run(params).changes
     }
     let update_run_with_updated_at = (
-      id: number,
+      id_or_filter: number | Record<string, any>,
       row: Record<string, any>,
     ): number => {
-      let params: Record<string, any> = { id }
-      let keys: string[] = []
+      let filter =
+        typeof id_or_filter === 'number' ? { id: id_or_filter } : id_or_filter
+
+      let params: Record<string, any> = {}
+
+      let filter_keys: string[] = []
+      for (let key in filter) {
+        filter_keys.push(key)
+        params['filter_' + key] = filter[key]
+      }
+
+      let update_keys: string[] = []
       for (let key in row) {
         if (key === 'updated_at') continue
         if (tableFieldNames.includes(key)) {
-          keys.push(key)
-          params[key] = toSqliteValue(row[key])
+          update_keys.push(key)
+          params['update_' + key] = toSqliteValue(row[key])
         } else if (relationFieldNames.includes(key)) {
           let field = relationFieldDict[key].field
-          keys.push(field)
-          params[field] = row[key].id
+          update_keys.push(field)
+          params['update_' + field] = row[key].id
         }
       }
-      if (keys.length == 0) return 0
-      let key = keys.join('|')
+      if (update_keys.length == 0) return 0
+      let key = Object.keys(params).join('|')
       let update =
         update_dict[key] ||
-        (update_dict[key] = db.prepare(
-          /* sql */ `update "${table}" set ${keys.map(
-            key => `"${key}" = :${key}`,
-          )}, updated_at = current_timestamp where id = :id`,
-        ))
+        (update_dict[key] = db.prepare(/* sql */ `
+update "${table}"
+set ${update_keys.map(key => `"${key}" = :update_${key}`)}
+, updated_at = current_timestamp
+where ${filter_keys.map(key => `"${key}" = :filter_${key}`).join(' and ')}`))
       return update.run(params).changes
     }
     let update_run =

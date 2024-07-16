@@ -446,20 +446,57 @@ drop table "order";
       expect(matches[0].id).to.equals(post_id)
     })
   })
-  it('should update multiple columns in batch', () => {
-    proxy.user[1] = { username: 'admin', is_admin: true }
-    let user = proxy.user[1]
-    expect(user.username).to.equals('admin')
-    expect(user.is_admin).to.be.equals(1)
+  context('update()', () => {
+    context('update by id', () => {
+      it('should update multiple columns in batch', () => {
+        proxy.user[1] = { username: 'admin', is_admin: true }
+        let user = proxy.user[1]
+        expect(user.username).to.equals('admin')
+        expect(user.is_admin).to.be.equals(1)
 
-    update(proxy.user, 1, { username: 'alice', is_admin: false })
-    expect(user.username).to.equals('alice')
-    expect(user.is_admin).to.be.equals(0)
+        update(proxy.user, 1, { username: 'alice', is_admin: false })
+        expect(user.username).to.equals('alice')
+        expect(user.is_admin).to.be.equals(0)
+      })
+      it('should return number of updated rows', () => {
+        expect(update(proxy.user, 1, { is_admin: false })).to.equals(1)
+        expect(update(proxy.user, 101, { is_admin: false })).to.equals(0)
+      })
+    })
+    context('update by filter', () => {
+      before(() => {
+        proxy.user[1] = { username: 'alice' }
+        proxy.user[2] = { username: 'bob' }
+
+        proxy.post.length = 0
+        expect(proxy.post.length).to.equals(0)
+        proxy.post[1] = { user_id: 1, content: 'v1' }
+        proxy.post[2] = { user_id: 1, content: 'v1' }
+        proxy.post[3] = { user_id: 1, content: 'v1' }
+        proxy.post[4] = { user_id: 2, content: 'v1' }
+        proxy.post[5] = { user_id: 2, content: 'v1' }
+        expect(proxy.post.length).to.equals(5)
+      })
+      it('should update multiple columns in batch', () => {
+        let changes = update(
+          proxy.post,
+          { user_id: 1, content: 'v1' },
+          { user_id: 2, content: 'v2' },
+        )
+        expect(changes).to.equals(3)
+        for (let i = 1; i <= 5; i++) {
+          if (i <= 3) {
+            expect(proxy.post[i].user_id).to.equals(2)
+            expect(proxy.post[i].content).to.equals('v2')
+          } else {
+            expect(proxy.post[i].content).to.equals('v1')
+          }
+        }
+      })
+      it('should return number of updated rows', () => {})
+    })
   })
-  it('should return number of updated rows', () => {
-    expect(update(proxy.user, 1, { is_admin: false })).to.equals(1)
-    expect(update(proxy.user, 101, { is_admin: false })).to.equals(0)
-  })
+
   context('getTimes()', () => {
     before(() => {
       proxy.user[1] = { username: 'alice' }

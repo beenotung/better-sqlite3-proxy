@@ -67,11 +67,11 @@ export let updateSymbol = Symbol.for('update')
  */
 export function update<T extends object>(
   table: T[],
-  id: number,
+  id_or_filter: number | Partial<T>,
   partial: Partial<T>,
 ): number {
   if (updateSymbol in table) {
-    return (table as any)[updateSymbol](id, partial)
+    return (table as any)[updateSymbol](id_or_filter, partial)
   }
   throw new Error(
     'expect table proxy, but got: ' + Object.prototype.toString.call(table),
