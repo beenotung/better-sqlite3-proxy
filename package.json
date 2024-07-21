@@ -36,24 +36,24 @@
   },
   "dependencies": {
     "@beenotung/better-sqlite3-helper": "^4.1.7",
-    "better-sqlite3": "^11.0.0",
+    "better-sqlite3": "^11.1.2",
     "better-sqlite3-schema": "^3.1.7",
-    "quick-erd": "^4.21.5"
+    "quick-erd": "^4.23.0"
   },
   "devDependencies": {
-    "@types/better-sqlite3": "^7.6.10",
+    "@types/better-sqlite3": "^7.6.11",
     "@types/chai": "^4.3.16",
     "@types/integer": "^4.0.3",
-    "@types/mocha": "^10.0.6",
-    "@types/node": "^20.14.2",
+    "@types/mocha": "^10.0.7",
+    "@types/node": "^20.14.11",
     "@types/sinon": "^17.0.3",
     "chai": "^4.4.1",
-    "mocha": "^10.4.0",
-    "prettier": "^3.3.2",
-    "rimraf": "^5.0.7",
-    "sinon": "^17.0.1",
+    "mocha": "^10.7.0",
+    "prettier": "^3.3.3",
+    "rimraf": "^6.0.1",
+    "sinon": "^18.0.0",
     "ts-mocha": "^10.0.0",
     "ts-node": "^10.9.2",
-    "typescript": "^5.4.5"
+    "typescript": "^5.5.3"
   }
 }
