@@ -9,6 +9,7 @@ import {
   filter,
   find,
   notNull,
+  truncate,
   unProxy,
   update,
 } from '../src/extension'
@@ -183,13 +184,36 @@ drop table "order";
     test({ input: true, output: 1 })
     test({ input: false, output: 0 })
   })
-  it('should truncate table', () => {
-    expect(proxy.user.length).not.equals(0)
+  it('should truncate table by length', () => {
+    proxy.user[1] = { username: 'alice' }
+    proxy.user[2] = { username: 'bob' }
+    expect(proxy.user.length).not.to.equals(0)
     proxy.post.length = 0
     proxy.user.length = 0
     expect(proxy.user.length).to.equals(0)
     expect(proxy.user[1]).to.be.undefined
     expect(proxy.user[2]).to.be.undefined
+  })
+  it('should truncate table with helper function', () => {
+    proxy.user[1] = { username: 'alice' }
+    proxy.user[2] = { username: 'bob' }
+    expect(proxy.user.length).not.to.equals(0)
+    truncate(proxy.post)
+    truncate(proxy.user)
+    expect(proxy.user.length).to.equals(0)
+    expect(proxy.user[1]).to.be.undefined
+    expect(proxy.user[2]).to.be.undefined
+  })
+  it('should reuse id after truncate', () => {
+    proxy.user[1] = { username: 'alice' }
+    proxy.user[2] = { username: 'bob' }
+    truncate(proxy.user)
+    expect(proxy.user[1]).to.be.undefined
+    expect(proxy.user[2]).to.be.undefined
+    expect(proxy.user.push({ username: 'alice' })).to.equals(1)
+    expect(proxy.user.push({ username: 'bob' })).to.equals(2)
+    expect(proxy.user[1].username).to.equals('alice')
+    expect(proxy.user[2].username).to.equals('bob')
   })
   it('should find record by non-id column', () => {
     proxy.user[1] = { id: 1, username: 'Alice' }

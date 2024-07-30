@@ -8,6 +8,7 @@ import {
   unProxySymbol,
   updateSymbol,
   clearCacheSymbol,
+  truncateSymbol,
 } from '../src/extension'
 import * as lib from '../src/extension'
 
@@ -30,6 +31,7 @@ describe('avoid using unique symbols to tolerant different instance of package',
   test(findSymbol)
   test(filterSymbol)
   test(delSymbol)
+  test(truncateSymbol)
   test(countSymbol)
   test(updateSymbol)
   test(notNull as any)

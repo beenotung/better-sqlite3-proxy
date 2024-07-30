@@ -9,6 +9,7 @@ import {
   delSymbol,
   clearCacheSymbol,
   clearCache,
+  truncateSymbol,
 } from './extension'
 import { filterToKey, notNullPlaceholder } from './internal'
 
@@ -244,6 +245,24 @@ create table if not exists "${table}" (
       return select.run(filter).changes
     }
 
+    let truncate_table = db.prepare(/* sql */ `delete from "${table}"`)
+    let select_has_sequence_table = db
+      .prepare(
+        /* sql */ `select count(*) from sqlite_master where name = 'sqlite_sequence'`,
+      )
+      .pluck()
+    let reset_table_sequence: Statement | undefined
+    function truncate() {
+      truncate_table.run()
+      let has_sequence_table = select_has_sequence_table.get()
+      if (has_sequence_table) {
+        reset_table_sequence ||= db.prepare(
+          /* sql */ `update sqlite_sequence set seq = 0 where name = '${table}'`,
+        )
+        reset_table_sequence.run()
+      }
+    }
+
     let count_dict: Record<string, Statement> = {}
     function count(filter: Partial<Row<Name>>): number {
       let keys = Object.keys(filter) as Array<string & keyof typeof filter>
@@ -299,6 +318,7 @@ create table if not exists "${table}" (
           case findSymbol:
           case filterSymbol:
           case delSymbol:
+          case truncateSymbol:
           case countSymbol:
           case updateSymbol:
           case clearCacheSymbol:
@@ -348,6 +368,8 @@ create table if not exists "${table}" (
             return filter
           case delSymbol:
             return del
+          case truncateSymbol:
+            return truncate
           case countSymbol:
             return count
           case updateSymbol:

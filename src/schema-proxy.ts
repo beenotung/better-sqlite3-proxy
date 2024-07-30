@@ -9,6 +9,7 @@ import {
   delSymbol,
   clearCacheSymbol,
   clearCache,
+  truncateSymbol,
 } from './extension'
 import { parseCreateTable } from 'quick-erd/dist/db/sqlite-parser'
 import { toSqliteTimestamp } from './helpers'
@@ -378,6 +379,24 @@ where ${filter_keys.map(key => `"${key}" = :filter_${key}`).join(' and ')}`))
       return del.run(filter).changes
     }
 
+    let truncate_table = db.prepare(/* sql */ `delete from "${table}"`)
+    let select_has_sequence_table = db
+      .prepare(
+        /* sql */ `select count(*) from sqlite_master where name = 'sqlite_sequence'`,
+      )
+      .pluck()
+    let reset_table_sequence: Statement | undefined
+    function truncate() {
+      truncate_table.run()
+      let has_sequence_table = select_has_sequence_table.get()
+      if (has_sequence_table) {
+        reset_table_sequence ||= db.prepare(
+          /* sql */ `update sqlite_sequence set seq = 0 where name = '${table}'`,
+        )
+        reset_table_sequence.run()
+      }
+    }
+
     let count_dict: Record<string, Statement> = {}
     function count(filter: Partial<Row<Name>>): number {
       let keys = Object.keys(filter) as Array<string & keyof typeof filter>
@@ -468,6 +487,7 @@ where ${filter_keys.map(key => `"${key}" = :filter_${key}`).join(' and ')}`))
           case findSymbol:
           case filterSymbol:
           case delSymbol:
+          case truncateSymbol:
           case countSymbol:
           case updateSymbol:
           case clearCacheSymbol:
@@ -516,6 +536,8 @@ where ${filter_keys.map(key => `"${key}" = :filter_${key}`).join(' and ')}`))
             return filter
           case delSymbol:
             return del
+          case truncateSymbol:
+            return truncate
           case countSymbol:
             return count
           case updateSymbol:

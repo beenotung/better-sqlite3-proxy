@@ -46,6 +46,17 @@ export function del<T extends object>(table: T[], partial: Partial<T>): number {
   )
 }
 
+export let truncateSymbol = Symbol.for('truncate')
+
+export function truncate<T extends object>(table: T[]): void {
+  if (truncateSymbol in table) {
+    return (table as any)[truncateSymbol]()
+  }
+  throw new Error(
+    'expect table proxy, but got: ' + Object.prototype.toString.call(table),
+  )
+}
+
 export let countSymbol = Symbol.for('count')
 
 export function count<T extends object>(
