@@ -288,7 +288,10 @@ drop table "order";
         expect(find(proxy.log, { id: 2, remark: null })).not.undefined
       })
       it('should filter columns', () => {
-        expect(filter(proxy.log, { remark: null })).to.have.lengthOf(2)
+        let matches = filter(proxy.log, { remark: null })
+        expect(matches).to.have.lengthOf(2)
+        expect(matches[0].id).to.equals(2)
+        expect(matches[1].id).to.equals(4)
       })
       it('should count columns', () => {
         expect(count(proxy.log, { remark: null })).to.equals(2)
@@ -300,7 +303,11 @@ drop table "order";
         expect(find(proxy.log, { id: 2, remark: notNull })).undefined
       })
       it('should filter columns', () => {
-        expect(filter(proxy.log, { remark: notNull })).to.have.lengthOf(3)
+        let matches = filter(proxy.log, { remark: notNull })
+        expect(matches).to.have.lengthOf(3)
+        expect(matches[0].id).to.equals(1)
+        expect(matches[1].id).to.equals(3)
+        expect(matches[2].id).to.equals(5)
       })
       it('should count columns', () => {
         expect(count(proxy.log, { remark: notNull })).to.equals(3)
