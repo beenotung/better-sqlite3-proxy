@@ -207,6 +207,16 @@ context('proxyKeyValue TestSuit', () => {
         expect(proxy.log[4].remark).to.equals('v2')
         expect(proxy.log[5].remark).to.equals('mock-value-5')
       })
+      it('should delete rows', () => {
+        let changes = del(proxy.log, { remark: null })
+        expect(changes).to.equals(2)
+        expect(proxy.log.length).to.equals(3)
+        expect(proxy.log[1].remark).to.equals('mock-value-1')
+        expect(proxy.log[2]).to.be.undefined
+        expect(proxy.log[3].remark).to.equals('mock-value-3')
+        expect(proxy.log[4]).to.be.undefined
+        expect(proxy.log[5].remark).to.equals('mock-value-5')
+      })
     })
     context('where is not null', () => {
       it('should find columns', () => {
@@ -231,6 +241,16 @@ context('proxyKeyValue TestSuit', () => {
         expect(proxy.log[3].remark).to.equals('v2')
         expect(proxy.log[4].remark).to.be.null
         expect(proxy.log[5].remark).to.equals('v2')
+      })
+      it('should delete rows', () => {
+        let changes = del(proxy.log, { remark: notNull })
+        expect(changes).to.equals(3)
+        expect(proxy.log.length).to.equals(2)
+        expect(proxy.log[1]).to.be.undefined
+        expect(proxy.log[2].remark).to.be.null
+        expect(proxy.log[3]).to.be.undefined
+        expect(proxy.log[4].remark).to.be.null
+        expect(proxy.log[5]).to.be.undefined
       })
     })
   })
