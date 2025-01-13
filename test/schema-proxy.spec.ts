@@ -273,7 +273,7 @@ drop table "order";
     expect(count(proxy.post, { user_id: 101 })).to.equals(0)
   })
   context('null condition', () => {
-    before(() => {
+    beforeEach(() => {
       proxy.log.length = 0
       proxy.log[1] = { remark: 'mock-value-1' }
       proxy.log[2] = { remark: null }
@@ -296,6 +296,15 @@ drop table "order";
       it('should count columns', () => {
         expect(count(proxy.log, { remark: null })).to.equals(2)
       })
+      it('should update columns', () => {
+        let changes = update(proxy.log, { remark: null }, { remark: 'v2' })
+        expect(changes).to.equals(2)
+        expect(proxy.log[1].remark).to.equals('mock-value-1')
+        expect(proxy.log[2].remark).to.equals('v2')
+        expect(proxy.log[3].remark).to.equals('mock-value-3')
+        expect(proxy.log[4].remark).to.equals('v2')
+        expect(proxy.log[5].remark).to.equals('mock-value-5')
+      })
     })
     context('where is not null', () => {
       it('should find columns', () => {
@@ -311,6 +320,15 @@ drop table "order";
       })
       it('should count columns', () => {
         expect(count(proxy.log, { remark: notNull })).to.equals(3)
+      })
+      it('should update columns', () => {
+        let changes = update(proxy.log, { remark: notNull }, { remark: 'v2' })
+        expect(changes).to.equals(3)
+        expect(proxy.log[1].remark).to.equals('v2')
+        expect(proxy.log[2].remark).to.be.null
+        expect(proxy.log[3].remark).to.equals('v2')
+        expect(proxy.log[4].remark).to.be.null
+        expect(proxy.log[5].remark).to.equals('v2')
       })
     })
   })

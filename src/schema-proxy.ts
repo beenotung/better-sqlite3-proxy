@@ -126,13 +126,14 @@ export function proxySchema<Dict extends { [table: string]: object[] }>(
         }
       }
       if (update_keys.length == 0) return 0
-      let key = Object.keys(params).join('|')
+      let key = filterToKey(params)
       let update =
         update_dict[key] ||
         (update_dict[key] = db.prepare(/* sql */ `
 update "${table}"
 set ${update_keys.map(key => `"${key}" = :update_${key}`)}
-where ${filter_keys.map(key => `"${key}" = :filter_${key}`).join(' and ')}`))
+where ${filter_keys.map(key => toWhereCondition(params, key, 'filter_')).join(' and ')}
+`))
       return update.run(params).changes
     }
     let update_run_with_updated_at = (
@@ -163,14 +164,15 @@ where ${filter_keys.map(key => `"${key}" = :filter_${key}`).join(' and ')}`))
         }
       }
       if (update_keys.length == 0) return 0
-      let key = Object.keys(params).join('|')
+      let key = filterToKey(params)
       let update =
         update_dict[key] ||
         (update_dict[key] = db.prepare(/* sql */ `
 update "${table}"
 set ${update_keys.map(key => `"${key}" = :update_${key}`)}
 , updated_at = current_timestamp
-where ${filter_keys.map(key => `"${key}" = :filter_${key}`).join(' and ')}`))
+where ${filter_keys.map(key => toWhereCondition(params, key, 'filter_')).join(' and ')}
+`))
       return update.run(params).changes
     }
     let update_run =
@@ -641,11 +643,16 @@ function toSqliteValue(value: unknown) {
   }
 }
 
-function toWhereCondition<Filter>(filter: Filter, key: string & keyof Filter) {
-  let value = filter[key]
+function toWhereCondition<Filter>(
+  filter: Filter,
+  key: string & keyof Filter,
+  prefix = '',
+) {
+  let bind_key = (prefix + key) as typeof key
+  let value = filter[bind_key]
   return value === null
     ? `"${key}" is null`
     : value === notNullPlaceholder
       ? `"${key}" is not null`
-      : `"${key}" = :${key}`
+      : `"${key}" = :${bind_key}`
 }
