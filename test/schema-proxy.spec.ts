@@ -524,7 +524,6 @@ drop table "order";
           }
         }
       })
-      it('should return number of updated rows', () => {})
     })
   })
 
