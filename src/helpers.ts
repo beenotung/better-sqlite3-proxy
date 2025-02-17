@@ -1,4 +1,4 @@
-import { find } from './extension'
+import { find, update } from './extension'
 
 export type Table<T extends object> = Array<{ id: number } & T>
 
@@ -37,7 +37,7 @@ export function seedRow<
 >(table: T[], filter: Filter, extra?: Omit<T, keyof Filter>): number {
   let row = find(table, filter)
   if (row) {
-    if (extra) Object.assign(row, extra)
+    if (extra) update(table, filter, extra as Partial<T>)
     return row.id!
   } else {
     return table.push({ ...filter, ...extra } as any as T)
