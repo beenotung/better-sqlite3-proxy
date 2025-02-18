@@ -10,7 +10,7 @@ export function unProxy<T extends object>(row: T): T {
 
 export let findSymbol = Symbol.for('find')
 
-/** @description using `where` clause to find a row */
+/** @description using `where` clause with `limit 1` to find a row */
 export function find<T extends object>(
   table: T[],
   filter: Partial<T>,
