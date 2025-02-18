@@ -1,5 +1,6 @@
 export let unProxySymbol = Symbol.for('unProxy')
 
+/** @description act like `select *` on entire table or a row */
 export function unProxy<T extends object>(row: T): T {
   if (unProxySymbol in row) {
     return (row as any)[unProxySymbol]
@@ -9,6 +10,7 @@ export function unProxy<T extends object>(row: T): T {
 
 export let findSymbol = Symbol.for('find')
 
+/** @description using `where` clause to find a row */
 export function find<T extends object>(
   table: T[],
   filter: Partial<T>,
@@ -23,6 +25,7 @@ export function find<T extends object>(
 
 export let filterSymbol = Symbol.for('filter')
 
+/** @description using `where` clause to filter rows */
 export function filter<T extends object>(table: T[], filter: Partial<T>): T[] {
   if (filterSymbol in table) {
     return (table as any)[filterSymbol](filter)
@@ -35,6 +38,7 @@ export function filter<T extends object>(table: T[], filter: Partial<T>): T[] {
 export let delSymbol = Symbol.for('del')
 
 /**
+ * @description act like `delete from table where ...`
  * @returns number of deleted rows
  */
 export function del<T extends object>(table: T[], partial: Partial<T>): number {
@@ -48,6 +52,7 @@ export function del<T extends object>(table: T[], partial: Partial<T>): number {
 
 export let truncateSymbol = Symbol.for('truncate')
 
+/** @description act like `truncate table` */
 export function truncate<T extends object>(table: T[]): void {
   if (truncateSymbol in table) {
     return (table as any)[truncateSymbol]()
@@ -59,6 +64,10 @@ export function truncate<T extends object>(table: T[]): void {
 
 export let countSymbol = Symbol.for('count')
 
+/**
+ * @description act like `select count(*) from table where ...`
+ * @returns number of matched rows
+ */
 export function count<T extends object>(
   table: T[],
   partial: Partial<T>,
@@ -74,6 +83,7 @@ export function count<T extends object>(
 export let updateSymbol = Symbol.for('update')
 
 /**
+ * @description act like `update table set column1 = value1, column2 = value2, ... where ...`
  * @returns number of updated rows
  */
 export function update<T extends object>(
@@ -93,6 +103,9 @@ export let notNull = Symbol.for('not null') as any as null
 
 export let clearCacheSymbol = Symbol.for('clearCache')
 
+/**
+ * @description clear in-memory cache of table proxy and row proxy to prevent memory leak
+ */
 export function clearCache(proxy: object) {
   if (clearCacheSymbol in proxy) {
     return (proxy as any)[clearCacheSymbol]()
