@@ -8,6 +8,9 @@ Powered by [better-sqlite3](https://github.com/WiseLibs/better-sqlite3)🔋
 ## Features
 
 - [x] Type safety support for each table
+- [x] support common types of table
+  - [x] with schema (e.g. id, user_id, title, content)
+  - [x] with json (e.g. id, value)
 - [x] auto run sqlite statements, supports:
   - [x] create table (only for key-value proxy)
   - [x] select
