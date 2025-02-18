@@ -140,6 +140,10 @@ context('proxyKeyValue TestSuit', () => {
     expect(match).to.deep.equals({ id: 3, user_id: 1, content: 'Hi Bob' })
   })
   it('should filter records by any columns', () => {
+    proxy.post.length = 0
+    proxy.post[1] = { id: 1, user_id: 1, content: 'Hello from Alice' }
+    proxy.post[2] = { id: 2, user_id: 2, content: 'Hello from Bob' }
+    proxy.post[3] = { id: 3, user_id: 1, content: 'Hi Bob' }
     let matches = filter(proxy.post, { user_id: 1 })
     expect(matches).to.deep.equals([
       { id: 1, user_id: 1, content: 'Hello from Alice' },

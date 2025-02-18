@@ -239,6 +239,10 @@ drop table "order";
     expect(match.id).to.equals(3)
   })
   it('should filter records by any columns', () => {
+    proxy.post.length = 0
+    proxy.post[1] = { user_id: 1, content: 'Hello from Alice' }
+    proxy.post[2] = { user_id: 2, content: 'Hello from Bob' }
+    proxy.post[3] = { user_id: 1, content: 'Hi Bob' }
     let matches = filter(proxy.post, { user_id: 1 })
     expect(matches).to.have.lengthOf(2)
     expect(matches[0].id).to.equals(1)
