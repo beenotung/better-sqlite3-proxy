@@ -35,6 +35,22 @@ export function filter<T extends object>(table: T[], filter: Partial<T>): T[] {
   )
 }
 
+export let pickSymbol = Symbol.for('pick')
+
+/** @description act like `select column1, column2, ...`, with or without `where` clause */
+export function pick<T extends object, K extends keyof T>(
+  table: T[],
+  columns: Array<K>,
+  filter?: Partial<T>,
+): Pick<T, K>[] {
+  if (pickSymbol in table) {
+    return (table as any)[pickSymbol](columns, filter)
+  }
+  throw new Error(
+    'expect table proxy, but got: ' + Object.prototype.toString.call(table),
+  )
+}
+
 export let delSymbol = Symbol.for('del')
 
 /**

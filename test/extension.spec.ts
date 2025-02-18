@@ -4,6 +4,7 @@ import {
   delSymbol,
   filterSymbol,
   findSymbol,
+  pickSymbol,
   notNull,
   unProxySymbol,
   updateSymbol,
@@ -30,6 +31,7 @@ describe('avoid using unique symbols to tolerant different instance of package',
   test(unProxySymbol)
   test(findSymbol)
   test(filterSymbol)
+  test(pickSymbol)
   test(delSymbol)
   test(truncateSymbol)
   test(countSymbol)

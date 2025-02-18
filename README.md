@@ -28,26 +28,29 @@ Powered by [better-sqlite3](https://github.com/WiseLibs/better-sqlite3)🔋
 
 ### Array Operations Mapping
 
-| Array Operation          | Mapped SQL Operation                  |
-| ------------------------ | ------------------------------------- |
-| array.push(...object)    | insert                                |
-| array[id] = object       | insert or update                      |
-| update(array,id,partial) | update                                |
-| find(array, filter)      | select where filter limit 1           |
-| filter(array, filter)    | select where filter                   |
-| count(array, filter)     | select count where filter             |
-| delete array[id]         | delete where id                       |
-| del(array, filter)       | delete where filter                   |
-| array.length = length    | delete where id > length              |
-| array.slice(start, end)  | select where id >= start and id < end |
+| Array Operation                 | Mapped SQL Operation                  |
+| ------------------------------- | ------------------------------------- |
+| `array.push(...object)`         | insert                                |
+| `array[id] = object`            | insert or update                      |
+| `update(array, id, partial)`    | update                                |
+| `find(array, filter)`           | select where filter limit 1           |
+| `filter(array, filter)`         | select where filter                   |
+| `pick(array, columns, filter?)` | select columns where filter           |
+| `count(array, filter)`          | select count where filter             |
+| `delete array[id]`              | delete where id                       |
+| `del(array, filter)`            | delete where filter                   |
+| `array.length = length`         | delete where id > length              |
+| `array.slice(start, end)`       | select where id >= start and id < end |
 
-for-of loop, array.forEach(fn), array.filter(fn) and array.map(fn) are also supported, they will receive proxy-ed rows.
+for-of loop, `array.forEach(fn)`, `array.filter(fn)` and `array.map(fn)` are also supported, they will receive proxy-ed rows.
 
-Tips: You can use for-of loop instead of array.forEach(fn) if you may terminate the loop early
+Tips: You can use for-of loop instead of `array.forEach(fn)` if you may terminate the loop early
 
-Tips: You can use filter(partial) instead of array.filter(fn) if possible for better performance
+Tips: You can use `filter(partial)` instead of `array.filter(fn)` for better performance
 
-Tips: You can use update(array,id,partial) instead of Object.assign(row,partial) to update multiple columns in batch
+Tips: You can use `pick(array, columns, filter?)` instead of `array.map(fn)` for better performance
+
+Tips: You can use `update(array, id, partial)` instead of `Object.assign(row, partial)` to update multiple columns in batch
 
 Pro Tips: If you need complex query that can be expressed in sql, use prepared statement will have fastest runtime performance.
 

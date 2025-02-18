@@ -9,6 +9,7 @@ import {
   filter,
   find,
   notNull,
+  pick,
   truncate,
   unProxy,
   update,
@@ -148,6 +149,41 @@ context('proxyKeyValue TestSuit', () => {
     expect(matches).to.deep.equals([
       { id: 1, user_id: 1, content: 'Hello from Alice' },
       { id: 3, user_id: 1, content: 'Hi Bob' },
+    ])
+  })
+  it('should pick columns without filter', () => {
+    proxy.post.length = 0
+    proxy.post[1] = { id: 1, user_id: 1, content: 'Hello from Alice' }
+    proxy.post[2] = { id: 2, user_id: 2, content: 'Hello from Bob' }
+    proxy.post[3] = { id: 3, user_id: 1, content: 'Hi Bob' }
+    let matches = pick(proxy.post, ['id', 'content'])
+    expect(matches).to.deep.equals([
+      { id: 1, content: 'Hello from Alice' },
+      { id: 2, content: 'Hello from Bob' },
+      { id: 3, content: 'Hi Bob' },
+    ])
+  })
+  it('should pick columns with empty filter', () => {
+    proxy.post.length = 0
+    proxy.post[1] = { id: 1, user_id: 1, content: 'Hello from Alice' }
+    proxy.post[2] = { id: 2, user_id: 2, content: 'Hello from Bob' }
+    proxy.post[3] = { id: 3, user_id: 1, content: 'Hi Bob' }
+    let matches = pick(proxy.post, ['id', 'content'], {})
+    expect(matches).to.deep.equals([
+      { id: 1, content: 'Hello from Alice' },
+      { id: 2, content: 'Hello from Bob' },
+      { id: 3, content: 'Hi Bob' },
+    ])
+  })
+  it('should pick columns with non-empty filter', () => {
+    proxy.post.length = 0
+    proxy.post[1] = { id: 1, user_id: 1, content: 'Hello from Alice' }
+    proxy.post[2] = { id: 2, user_id: 2, content: 'Hello from Bob' }
+    proxy.post[3] = { id: 3, user_id: 1, content: 'Hi Bob' }
+    let matches = pick(proxy.post, ['id', 'content'], { user_id: 1 })
+    expect(matches).to.deep.equals([
+      { id: 1, content: 'Hello from Alice' },
+      { id: 3, content: 'Hi Bob' },
     ])
   })
   it('should delete records by any columns', () => {

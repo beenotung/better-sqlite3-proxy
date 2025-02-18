@@ -10,6 +10,7 @@ import {
   clearCacheSymbol,
   clearCache,
   truncateSymbol,
+  pickSymbol,
 } from './extension'
 import { parseCreateTable } from 'quick-erd/dist/db/sqlite-parser'
 import { toSqliteTimestamp } from './helpers'
@@ -364,6 +365,50 @@ where ${filter_keys.map(key => toWhereCondition(params, key, 'filter_')).join(' 
       return rows.map(proxyRow)
     }
 
+    function pick<K extends keyof string & Row<Name>>(
+      columns: Array<K>,
+      filter?: Partial<Row<Name>>,
+    ): Pick<Row<Name>, K>[] {
+      if (!filter) {
+        return pick_without_filter(columns)
+      }
+      let keys = Object.keys(filter) as Array<string & keyof typeof filter>
+      if (keys.length === 0) {
+        return pick_without_filter(columns)
+      }
+      return pick_with_filter(columns, filter, keys)
+    }
+
+    let pick_without_filter_dict: Record<string, Statement> = {}
+    function pick_without_filter<K extends keyof string & Row<Name>>(
+      columns: Array<K>,
+    ): Pick<Row<Name>, K>[] {
+      let key = columns.join('|')
+      let select =
+        pick_without_filter_dict[key] ||
+        (pick_without_filter_dict[key] = db.prepare(
+          /* sql */ `select ${columns.map(column => `"${column}"`).join(',')} from "${table}"`,
+        ))
+      return select.all() as Pick<Row<Name>, K>[]
+    }
+
+    let pick_with_filter_dict: Record<string, Statement> = {}
+    function pick_with_filter<K extends keyof string & Row<Name>>(
+      columns: Array<K>,
+      filter: Partial<Row<Name>>,
+      keys: Array<string & keyof typeof filter>,
+    ): Pick<Row<Name>, K>[] {
+      let key = columns.join('|') + '||' + filterToKey(filter)
+      let select =
+        pick_with_filter_dict[key] ||
+        (pick_with_filter_dict[key] = db.prepare(
+          /* sql */ `select ${columns.map(column => `"${column}"`).join(',')} from "${table}" where ${keys
+            .map(key => toWhereCondition(filter, key))
+            .join(' and ')}`,
+        ))
+      return select.all(filter) as Pick<Row<Name>, K>[]
+    }
+
     let del_dict: Record<string, Statement> = {}
     function del(filter: Partial<Row<Name>>): number {
       let keys = Object.keys(filter) as Array<string & keyof typeof filter>
@@ -488,6 +533,7 @@ where ${filter_keys.map(key => toWhereCondition(params, key, 'filter_')).join(' 
           case unProxySymbol:
           case findSymbol:
           case filterSymbol:
+          case pickSymbol:
           case delSymbol:
           case truncateSymbol:
           case countSymbol:
@@ -536,6 +582,8 @@ where ${filter_keys.map(key => toWhereCondition(params, key, 'filter_')).join(' 
             return find
           case filterSymbol:
             return filter
+          case pickSymbol:
+            return pick
           case delSymbol:
             return del
           case truncateSymbol:
