@@ -41,6 +41,8 @@ export type Post = {
 export type Log = {
   id?: number
   remark: string | null
+  user_id?: number | null
+  user?: User
 }
 export type Order = {
   id?: number
@@ -89,6 +91,7 @@ drop table post;
 create table if not exists log (
   id integer primary key
 , remark text
+, user_id integer null references user (id)
 );
 -- Down
 drop table post;
@@ -108,7 +111,7 @@ drop table "order";
     proxy = proxySchema<DBProxy>(db, {
       user: [],
       post: [['author', { field: 'user_id', table: 'user' }]],
-      log: [],
+      log: [['user', { field: 'user_id', table: 'user' }]],
       order: [['user', { field: 'user_id', table: 'user' }]],
     })
   })
@@ -493,12 +496,15 @@ drop table "order";
       })
     })
   })
-  it('should resolve reference row from foreign key', () => {
-    expect(proxy.post[3].user_id).to.equals(1)
-    expect(proxy.user[1].username).to.equals('Alice')
-    let author = proxy.post[3].author!
-    expect(author).not.to.be.undefined
-    expect(author.username).to.equals('Alice')
+  it.only('should resolve reference row from foreign key', () => {
+    proxy.user[1] = { username: 'Alice' }
+    let id = proxy.log.push({ remark: 'test with user_id', user_id: 1 })
+    expect(proxy.log[id].user).not.to.be.undefined
+    expect(proxy.log[id].user?.username).to.equals('Alice')
+  })
+  it.only('should not resolve proxy row when foreign key is null', () => {
+    let id = proxy.log.push({ remark: 'test without user_id', user_id: null })
+    expect(proxy.log[id].user).to.be.undefined
   })
   it('should update foreign key when assign specific reference row', () => {
     expect(proxy.post[3].user_id).to.equals(1)

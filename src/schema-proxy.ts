@@ -508,10 +508,13 @@ where ${filter_keys.map(key => toWhereCondition(params, key, 'filter_')).join(' 
             }
             if (relationFieldNames.includes(p)) {
               let relationField = relationFieldDict[p]
-              let proxyRow = tableProxyRowDict[relationField.table]
               let foreign_id = select_one_column_dict[relationField.field].get(
                 id,
-              ) as number
+              ) as number | null
+              if (foreign_id === null) {
+                return undefined
+              }
+              let proxyRow = tableProxyRowDict[relationField.table]
               return proxyRow(foreign_id)
             }
           }
