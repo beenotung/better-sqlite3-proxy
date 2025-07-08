@@ -14,7 +14,7 @@ export function fromSqliteTimestamp(timestamp: string | Date): Date {
 
 export function getTimes<
   T extends {
-    id?: number
+    id?: number | null
     created_at?: string | null
     updated_at?: string | null
   },
