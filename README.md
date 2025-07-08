@@ -25,9 +25,10 @@ Powered by [better-sqlite3](https://github.com/WiseLibs/better-sqlite3)🔋
 - [x] extra helper functions:
   - [x] toSqliteTimestamp (date): string
   - [x] fromSqliteTimestamp (string_or_date): Date
+  - [x] getTimes (row, fields?): Record<Field, Date | null>
   - [x] seedRow (table, filter, extra?): number
-  - [x] upsert (table, key, date)
-  - [x] getId (table, key, value)
+  - [x] upsert (table, key, data): number
+  - [x] getId (table, key, value): number | null
 
 ### Array Operations Mapping
 
@@ -218,6 +219,48 @@ console.log(proxy.users.length) // 1
 // truncate table
 proxy.users.length = 0
 console.log(proxy.users.length) // 0
+```
+
+</details>
+
+<details>
+<summary>Helper Functions Examples (click to expand)
+
+More Examples in [helpers.spec.ts](./test/helpers.spec.ts)
+
+</summary>
+
+```typescript
+import DB from '@beenotung/better-sqlite3-helper'
+import {
+  proxySchema,
+  toSqliteTimestamp,
+  fromSqliteTimestamp,
+  getTimes,
+  seedRow,
+  getId,
+} from 'better-sqlite3-proxy'
+import { proxy } from './proxy'
+
+// Timestamp helpers
+let timestamp = toSqliteTimestamp(new Date())
+console.log(timestamp) // '2024-01-15 10:30:00'
+
+let date = fromSqliteTimestamp(timestamp)
+console.log(date) // Date object
+
+// Select timestamps and convert to Date objects (from ISO string in GMT timezone)
+let article = proxy.article[1]
+let times = getTimes(article, ['created_at', 'updated_at'])
+console.log(times.created_at) // Date object
+
+// Update existing row or insert new row
+let region_id = seedRow(proxy.region, { code: 'HK' }, { name: 'Hong Kong' })
+console.log(region_id) // 1
+
+// Simplified version of seedRow when the table only has one unique key
+let tag_id = getId(proxy.hashtag, 'tag', 'linux')
+console.log(tag_id) // 1
 ```
 
 </details>
