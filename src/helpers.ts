@@ -31,6 +31,14 @@ export function getTimes<
   return times
 }
 
+export function getTimesAsserted(row: { id?: number | null }) {
+  let { created_at, updated_at } = row as any
+  return {
+    created_at: created_at ? fromSqliteTimestamp(created_at) : null,
+    updated_at: updated_at ? fromSqliteTimestamp(updated_at) : null,
+  }
+}
+
 export function seedRow<
   T extends { id?: number | null },
   Filter extends Partial<T>,
