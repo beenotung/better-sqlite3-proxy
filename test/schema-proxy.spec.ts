@@ -496,13 +496,13 @@ drop table "order";
       })
     })
   })
-  it.only('should resolve reference row from foreign key', () => {
+  it('should resolve reference row from foreign key', () => {
     proxy.user[1] = { username: 'Alice' }
     let id = proxy.log.push({ remark: 'test with user_id', user_id: 1 })
     expect(proxy.log[id].user).not.to.be.undefined
     expect(proxy.log[id].user?.username).to.equals('Alice')
   })
-  it.only('should not resolve proxy row when foreign key is null', () => {
+  it('should not resolve proxy row when foreign key is null', () => {
     let id = proxy.log.push({ remark: 'test without user_id', user_id: null })
     expect(proxy.log[id].user).to.be.undefined
   })
